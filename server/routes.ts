@@ -266,9 +266,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Must select between 1 and 10 numbers" });
       }
 
-      // Create bet
+      // Create bet with proper userId
       const bet = await storage.createBet({
         ...betData,
+        userId: userId,
         gameId: currentGame.id,
       });
 
@@ -277,8 +278,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       res.status(201).json(bet);
     } catch (error) {
+      console.log("Bet error details:", error);
       if (error instanceof z.ZodError) {
-        return res.status(400).json({ message: "Invalid bet data" });
+        console.log("Validation errors:", error.errors);
+        return res.status(400).json({ 
+          message: "Invalid bet data",
+          errors: error.errors 
+        });
       }
       res.status(500).json({ message: "Internal server error" });
     }
