@@ -51,6 +51,11 @@ export default {
           "4": "var(--chart-4)",
           "5": "var(--chart-5)",
         },
+        "game-navy": "var(--game-navy)",
+        "game-purple": "var(--game-purple)",
+        "game-green": "var(--game-green)",
+        "game-gold": "var(--game-gold)",
+        "game-amber": "var(--game-amber)",
         sidebar: {
           DEFAULT: "var(--sidebar-background)",
           foreground: "var(--sidebar-foreground)",

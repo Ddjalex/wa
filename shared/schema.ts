@@ -46,7 +46,7 @@ export const insertKenoBetSchema = createInsertSchema(kenoBets).pick({
   gameId: true,
   selectedNumbers: true,
   betAmount: true,
-});
+}).required();
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
