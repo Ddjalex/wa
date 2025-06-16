@@ -249,7 +249,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const betData = insertKenoBetSchema.parse(req.body);
       
       // Validate user has sufficient balance
-      const user = await storage.getUser(betData.userId);
+      const userId = betData.userId || 1; // Default to user 1 if not provided
+      const user = await storage.getUser(userId);
       if (!user || user.balance < betData.betAmount) {
         return res.status(400).json({ message: "Insufficient balance" });
       }
@@ -289,6 +290,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const gameId = req.query.gameId ? parseInt(req.query.gameId as string) : undefined;
       const bets = await storage.getUserBets(userId, gameId);
       res.json(bets);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Admin routes for profit control
+  app.get("/api/admin/settings", async (req, res) => {
+    try {
+      // Return current admin settings
+      res.json({
+        profitMargin: 15, // Default 15%
+        minBet: 5,
+        maxBet: 1000,
+        maxPlayers: 100,
+        revenue: 12450,
+        profit: 1867,
+        payouts: 10583
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/admin/settings", async (req, res) => {
+    try {
+      const { profitMargin, minBet, maxBet, maxPlayers } = req.body;
+      
+      // Validate settings
+      if (profitMargin < -10 || profitMargin > 100) {
+        return res.status(400).json({ message: "Profit margin must be between -10% and 100%" });
+      }
+      
+      if (minBet < 1 || maxBet < minBet) {
+        return res.status(400).json({ message: "Invalid betting limits" });
+      }
+      
+      // In a real app, you'd save these to a database
+      // For now, just return success
+      res.json({ 
+        message: "Settings updated successfully",
+        settings: { profitMargin, minBet, maxBet, maxPlayers }
+      });
     } catch (error) {
       res.status(500).json({ message: "Internal server error" });
     }

@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -6,26 +7,78 @@ import { Slider } from "@/components/ui/slider";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Settings, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 interface AdminPanelProps {
   isVisible: boolean;
   onClose: () => void;
 }
 
+interface AdminSettings {
+  profitMargin: number;
+  minBet: number;
+  maxBet: number;
+  maxPlayers: number;
+  revenue: number;
+  profit: number;
+  payouts: number;
+}
+
 export function AdminPanel({ isVisible, onClose }: AdminPanelProps) {
-  const [profitMargin, setProfitMargin] = useState([15]); // Default 15%
+  const [profitMargin, setProfitMargin] = useState([15]);
   const [minBet, setMinBet] = useState(5);
   const [maxBet, setMaxBet] = useState(1000);
   const [maxPlayers, setMaxPlayers] = useState(100);
-  const [isUpdating, setIsUpdating] = useState(false);
+  
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch current admin settings
+  const { data: settings, isLoading } = useQuery<AdminSettings>({
+    queryKey: ["/api/admin/settings"],
+    enabled: isVisible,
+  });
+
+  // Update settings mutation
+  const updateSettingsMutation = useMutation({
+    mutationFn: async (newSettings: Partial<AdminSettings>) => {
+      const response = await apiRequest("POST", "/api/admin/settings", newSettings);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Settings Updated",
+        description: "Admin settings have been successfully updated.",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/settings"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Update Failed",
+        description: error.message || "Failed to update settings.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Load settings when data is available
+  useEffect(() => {
+    if (settings) {
+      setProfitMargin([settings.profitMargin]);
+      setMinBet(settings.minBet);
+      setMaxBet(settings.maxBet);
+      setMaxPlayers(settings.maxPlayers);
+    }
+  }, [settings]);
 
   const handleUpdateSettings = async () => {
-    setIsUpdating(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsUpdating(false);
-      // Show success message
-    }, 1000);
+    updateSettingsMutation.mutate({
+      profitMargin: profitMargin[0],
+      minBet,
+      maxBet,
+      maxPlayers,
+    });
   };
 
   if (!isVisible) return null;
@@ -53,7 +106,9 @@ export function AdminPanel({ isVisible, onClose }: AdminPanelProps) {
                 <TrendingUp className="w-4 h-4" />
                 <span className="text-sm font-medium">Revenue</span>
               </div>
-              <div className="text-2xl font-bold text-white">$12,450</div>
+              <div className="text-2xl font-bold text-white">
+                ${settings?.revenue?.toLocaleString() || "0"}
+              </div>
               <div className="text-xs text-gray-400">Today</div>
             </div>
             
@@ -62,7 +117,9 @@ export function AdminPanel({ isVisible, onClose }: AdminPanelProps) {
                 <DollarSign className="w-4 h-4" />
                 <span className="text-sm font-medium">Profit</span>
               </div>
-              <div className="text-2xl font-bold text-white">$1,867</div>
+              <div className="text-2xl font-bold text-white">
+                ${settings?.profit?.toLocaleString() || "0"}
+              </div>
               <div className="text-xs text-gray-400">{profitMargin[0]}% margin</div>
             </div>
             
@@ -71,8 +128,12 @@ export function AdminPanel({ isVisible, onClose }: AdminPanelProps) {
                 <TrendingDown className="w-4 h-4" />
                 <span className="text-sm font-medium">Payouts</span>
               </div>
-              <div className="text-2xl font-bold text-white">$10,583</div>
-              <div className="text-xs text-gray-400">85% of revenue</div>
+              <div className="text-2xl font-bold text-white">
+                ${settings?.payouts?.toLocaleString() || "0"}
+              </div>
+              <div className="text-xs text-gray-400">
+                {settings?.revenue ? Math.round((settings.payouts / settings.revenue) * 100) : 0}% of revenue
+              </div>
             </div>
           </div>
 
@@ -178,10 +239,10 @@ export function AdminPanel({ isVisible, onClose }: AdminPanelProps) {
           <div className="flex gap-3 pt-4">
             <Button
               onClick={handleUpdateSettings}
-              disabled={isUpdating}
+              disabled={updateSettingsMutation.isPending}
               className="flex-1 bg-green-600 hover:bg-green-700"
             >
-              {isUpdating ? "Updating..." : "Apply Settings"}
+              {updateSettingsMutation.isPending ? "Updating..." : "Apply Settings"}
             </Button>
             <Button
               variant="secondary"
