@@ -28,7 +28,7 @@ export function Ball({
   const variants = {
     default: {
       backgroundColor: "rgb(55, 65, 81)", // gray-700
-      borderColor: "transparent",
+      borderColor: "rgb(55, 65, 81)", // Same as background to avoid transparent
       scale: 1,
     },
     selected: {
@@ -56,6 +56,7 @@ export function Ball({
         "ball-animation w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-sm border-2 transition-all duration-300 relative overflow-hidden",
         disabled && !isDrawn ? "cursor-not-allowed opacity-50" : "cursor-pointer hover:scale-105"
       )}
+      data-number={number}
       onClick={disabled ? undefined : onClick}
       animate={variants[ballVariant]}
       whileHover={disabled ? {} : { scale: 1.05 }}

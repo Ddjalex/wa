@@ -28,16 +28,6 @@ export class AnimationManager {
             // Add drawing animation with proper timing
             ball.classList.add('ball-draw');
             
-            // Update ball appearance after animation
-            setTimeout(() => {
-              ball.style.backgroundColor = 'rgb(99, 102, 241)'; // game-purple
-              ball.style.borderColor = 'rgb(147, 197, 253)'; // blue-300
-              
-              // Add bounce effect
-              ball.classList.remove('ball-draw');
-              ball.classList.add('ball-bounce');
-            }, 1000);
-
             this.drawnNumbers.add(number);
           }
         } catch (error) {

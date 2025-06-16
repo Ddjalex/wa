@@ -70,7 +70,7 @@ export default function KenoGame() {
     <div className="min-h-screen bg-gradient-to-br from-game-navy to-gray-800">
       {showPreview && (
         <AnimationPreview
-          currentSequence={Array.from(drawnNumbers).slice(-3)}
+          currentSequence={Array.from(drawnNumbers).slice(-5)}
           currentDrawNumber={currentDrawNumber}
           totalDraws={20}
           nextDrawTime={nextDrawTime}
@@ -78,7 +78,7 @@ export default function KenoGame() {
         />
       )}
       
-      <div className={`container mx-auto px-4 py-6 ${showPreview ? 'pt-20' : 'pt-6'}`}>
+      <div className={`container mx-auto px-4 py-6 ${showPreview ? 'pt-12' : 'pt-6'}`}>
         <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
           <div className="xl:col-span-3">
             <KenoBoard

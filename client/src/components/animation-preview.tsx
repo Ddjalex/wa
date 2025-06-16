@@ -25,43 +25,48 @@ export function AnimationPreview({
   };
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-black/90 backdrop-blur-sm border-b border-gray-700">
-      <div className="container mx-auto px-4 py-2">
+    <div className="fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-sm border-b border-gray-600">
+      <div className="container mx-auto px-4 py-1.5">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <h3 className="text-white font-semibold text-sm">Live Draw</h3>
-            <div className="flex items-center space-x-2">
-              <AnimatePresence mode="wait">
+          <div className="flex items-center space-x-3">
+            <h3 className="text-white font-medium text-xs">Live Draw</h3>
+            <div className="flex items-center space-x-1.5">
+              <AnimatePresence>
                 {currentSequence.map((number, index) => (
                   <motion.div
                     key={`${number}-${index}`}
-                    initial={{ x: -100, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    exit={{ x: 100, opacity: 0 }}
-                    transition={{ delay: index * 0.1 }}
+                    initial={{ x: -50, opacity: 0, scale: 0.8 }}
+                    animate={{ x: 0, opacity: 1, scale: 1 }}
+                    exit={{ x: 50, opacity: 0, scale: 0.8 }}
+                    transition={{ 
+                      delay: index * 0.05,
+                      type: "spring",
+                      stiffness: 400,
+                      damping: 25
+                    }}
                     className="preview-slide"
                   >
-                    <div className="w-8 h-8 bg-game-purple rounded-full flex items-center justify-center text-white text-xs font-bold border-2 border-game-gold">
+                    <div className="w-6 h-6 bg-gradient-to-br from-game-purple to-blue-600 rounded-full flex items-center justify-center text-white text-xs font-bold border border-game-gold shadow-lg">
                       {number}
                     </div>
                   </motion.div>
                 ))}
               </AnimatePresence>
-              <div className="text-gray-400 text-xs">
+              <div className="text-gray-400 text-xs ml-2">
                 {currentDrawNumber}/{totalDraws}
               </div>
             </div>
           </div>
           
-          <div className="flex items-center space-x-4">
-            <div className="text-white text-sm">
-              Next: <span className="text-game-amber font-semibold">{formatTime(timeRemaining)}</span>
+          <div className="flex items-center space-x-3">
+            <div className="text-white text-xs">
+              Next: <span className="text-game-amber font-medium">{formatTime(timeRemaining)}</span>
             </div>
             <button
               onClick={onToggle}
-              className="text-gray-400 hover:text-white transition-colors"
+              className="text-gray-400 hover:text-white transition-colors p-1"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3 h-3" />
             </button>
           </div>
         </div>
