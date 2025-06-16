@@ -99,6 +99,9 @@ This is a real-time Keno game application built with a full-stack architecture. 
 ```
 Changelog:
 - June 16, 2025. Initial setup
+- June 16, 2025. Implemented Ethiopian Birr betting system (20-5,000 Birr, 50x multiplier)
+- June 16, 2025. Added secure admin-side betting engine with player-facing calculator
+- June 16, 2025. Created dedicated admin dashboard at /admin and betting calculator at /betting
 ```
 
 ## User Preferences
