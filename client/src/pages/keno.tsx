@@ -77,11 +77,12 @@ export default function KenoGame() {
       <div className="fixed top-4 right-4 z-40">
         <Button
           onClick={() => setShowAdminPanel(true)}
-          variant="ghost"
+          variant="outline"
           size="sm"
-          className="text-gray-400 hover:text-white"
+          className="bg-gray-800/80 border-gray-600 text-white hover:bg-gray-700 hover:text-white backdrop-blur-sm"
         >
-          <Settings className="w-4 h-4" />
+          <Settings className="w-4 h-4 mr-2" />
+          Admin
         </Button>
       </div>
 
