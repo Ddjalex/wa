@@ -1,0 +1,301 @@
+import type { Express } from "express";
+import { createServer, type Server } from "http";
+import { WebSocketServer, WebSocket } from "ws";
+import { storage } from "./storage";
+import { insertKenoBetSchema, insertKenoGameSchema } from "@shared/schema";
+import { z } from "zod";
+
+interface GameState {
+  currentGame: any;
+  drawingSequence: number[];
+  currentDrawIndex: number;
+  isDrawing: boolean;
+  nextDrawTime: number;
+}
+
+let gameState: GameState = {
+  currentGame: null,
+  drawingSequence: [],
+  currentDrawIndex: 0,
+  isDrawing: false,
+  nextDrawTime: Date.now() + 45000, // 45 seconds from now
+};
+
+const DRAW_INTERVAL = 60000; // 1 minute between games
+const DRAWING_DURATION = 30000; // 30 seconds to draw all numbers
+const NUMBERS_TO_DRAW = 20;
+
+function generateRandomNumbers(count: number): number[] {
+  const numbers = new Set<number>();
+  while (numbers.size < count) {
+    numbers.add(Math.floor(Math.random() * 80) + 1);
+  }
+  return Array.from(numbers);
+}
+
+function calculateWinnings(selectedNumbers: number[], drawnNumbers: number[], betAmount: number): { winAmount: number; matchedNumbers: number } {
+  const matches = selectedNumbers.filter(num => drawnNumbers.includes(num)).length;
+  
+  // Simplified payout table (matches : multiplier)
+  const payoutTable: { [key: number]: number } = {
+    0: 0,
+    1: 0,
+    2: 0,
+    3: 3,
+    4: 5,
+    5: 10,
+    6: 25,
+    7: 50,
+    8: 100,
+    9: 250,
+    10: 500,
+  };
+  
+  const multiplier = payoutTable[matches] || 0;
+  return {
+    winAmount: betAmount * multiplier,
+    matchedNumbers: matches,
+  };
+}
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  const httpServer = createServer(app);
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+
+  // WebSocket connections
+  const clients = new Set<WebSocket>();
+
+  wss.on('connection', (ws) => {
+    clients.add(ws);
+    
+    // Send current game state to new client
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({
+        type: 'gameState',
+        data: gameState
+      }));
+    }
+
+    ws.on('close', () => {
+      clients.delete(ws);
+    });
+
+    ws.on('error', (error) => {
+      console.error('WebSocket error:', error);
+      clients.delete(ws);
+    });
+  });
+
+  function broadcastToClients(message: any) {
+    const messageStr = JSON.stringify(message);
+    clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(messageStr);
+      }
+    });
+  }
+
+  // Initialize first game
+  async function initializeGame() {
+    try {
+      gameState.currentGame = await storage.createGame({
+        gameNumber: 0, // Will be auto-assigned
+        drawnNumbers: [],
+        status: "waiting",
+      });
+      gameState.drawingSequence = generateRandomNumbers(NUMBERS_TO_DRAW);
+      gameState.currentDrawIndex = 0;
+      gameState.isDrawing = false;
+      gameState.nextDrawTime = Date.now() + 45000;
+      
+      broadcastToClients({
+        type: 'gameState',
+        data: gameState
+      });
+    } catch (error) {
+      console.error('Error initializing game:', error);
+    }
+  }
+
+  // Start drawing sequence
+  async function startDrawing() {
+    if (!gameState.currentGame || gameState.isDrawing) return;
+
+    gameState.isDrawing = true;
+    await storage.updateGame(gameState.currentGame.id, { status: "drawing" });
+    
+    broadcastToClients({
+      type: 'drawingStarted',
+      data: { gameId: gameState.currentGame.id }
+    });
+
+    // Draw numbers with proper timing (1.5 seconds between each)
+    const drawInterval = setInterval(async () => {
+      if (gameState.currentDrawIndex >= gameState.drawingSequence.length) {
+        clearInterval(drawInterval);
+        await completeGame();
+        return;
+      }
+
+      const drawnNumber = gameState.drawingSequence[gameState.currentDrawIndex];
+      gameState.currentDrawIndex++;
+
+      broadcastToClients({
+        type: 'numberDrawn',
+        data: {
+          number: drawnNumber,
+          index: gameState.currentDrawIndex,
+          total: NUMBERS_TO_DRAW
+        }
+      });
+    }, 1500);
+  }
+
+  // Complete current game and process bets
+  async function completeGame() {
+    if (!gameState.currentGame) return;
+
+    await storage.updateGame(gameState.currentGame.id, {
+      status: "completed",
+      drawnNumbers: gameState.drawingSequence,
+      completedAt: new Date(),
+    });
+
+    // Process all bets for this game
+    const bets = await storage.getBetsForGame(gameState.currentGame.id);
+    for (const bet of bets) {
+      const { winAmount, matchedNumbers } = calculateWinnings(
+        bet.selectedNumbers as number[],
+        gameState.drawingSequence,
+        bet.betAmount
+      );
+
+      await storage.updateBet(bet.id, {
+        winAmount,
+        matchedNumbers,
+        status: winAmount > 0 ? "won" : "lost",
+      });
+
+      if (winAmount > 0 && bet.userId) {
+        const user = await storage.getUser(bet.userId);
+        if (user) {
+          await storage.updateUserBalance(user.id, user.balance + winAmount);
+        }
+      }
+    }
+
+    gameState.isDrawing = false;
+    gameState.nextDrawTime = Date.now() + DRAW_INTERVAL;
+
+    broadcastToClients({
+      type: 'gameCompleted',
+      data: {
+        gameId: gameState.currentGame.id,
+        drawnNumbers: gameState.drawingSequence,
+        nextGameTime: gameState.nextDrawTime,
+      }
+    });
+
+    // Start next game after interval
+    setTimeout(() => {
+      initializeGame();
+    }, DRAW_INTERVAL);
+  }
+
+  // Game timer
+  setInterval(() => {
+    if (!gameState.isDrawing && gameState.nextDrawTime <= Date.now()) {
+      startDrawing();
+    }
+  }, 1000);
+
+  // API Routes
+  app.get("/api/user/:id", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json(user);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/game/current", async (req, res) => {
+    try {
+      const currentGame = await storage.getCurrentGame();
+      res.json({
+        game: currentGame,
+        state: gameState,
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/game/history", async (req, res) => {
+    try {
+      const history = await storage.getGameHistory(10);
+      res.json(history);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.post("/api/bet", async (req, res) => {
+    try {
+      const betData = insertKenoBetSchema.parse(req.body);
+      
+      // Validate user has sufficient balance
+      const user = await storage.getUser(betData.userId);
+      if (!user || user.balance < betData.betAmount) {
+        return res.status(400).json({ message: "Insufficient balance" });
+      }
+
+      // Validate game is in waiting state
+      const currentGame = await storage.getCurrentGame();
+      if (!currentGame || currentGame.status !== "waiting") {
+        return res.status(400).json({ message: "No active game for betting" });
+      }
+
+      // Validate selected numbers
+      if (betData.selectedNumbers.length === 0 || betData.selectedNumbers.length > 10) {
+        return res.status(400).json({ message: "Must select between 1 and 10 numbers" });
+      }
+
+      // Create bet
+      const bet = await storage.createBet({
+        ...betData,
+        gameId: currentGame.id,
+      });
+
+      // Deduct bet amount from user balance
+      await storage.updateUserBalance(user.id, user.balance - betData.betAmount);
+
+      res.status(201).json(bet);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid bet data" });
+      }
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  app.get("/api/user/:userId/bets", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const gameId = req.query.gameId ? parseInt(req.query.gameId as string) : undefined;
+      const bets = await storage.getUserBets(userId, gameId);
+      res.json(bets);
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Initialize the first game
+  initializeGame();
+
+  return httpServer;
+}
