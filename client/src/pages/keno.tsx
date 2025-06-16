@@ -3,16 +3,15 @@ import { KenoGameBoard } from "@/components/keno-game-board";
 import { LotteryBallDisplay } from "@/components/lottery-ball-display";
 import { BettingTicket } from "@/components/betting-ticket";
 import { DrawHistory } from "@/components/draw-history";
-import { AdminPanel } from "@/components/admin-panel";
 import { Button } from "@/components/ui/button";
 import { Settings } from "lucide-react";
 import { useKenoGame } from "@/hooks/use-keno-game";
 import { useWebSocket } from "@/hooks/use-websocket";
+import { Link } from "wouter";
 
 export default function KenoGame() {
   const [selectedNumbers, setSelectedNumbers] = useState<Set<number>>(new Set());
   const [currentBet, setCurrentBet] = useState(25);
-  const [showAdminPanel, setShowAdminPanel] = useState(false);
   
   const {
     gameState,
@@ -75,22 +74,17 @@ export default function KenoGame() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800">
       {/* Admin Access Button */}
       <div className="fixed top-4 right-4 z-40">
-        <Button
-          onClick={() => setShowAdminPanel(true)}
-          variant="outline"
-          size="sm"
-          className="bg-gray-800/80 border-gray-600 text-white hover:bg-gray-700 hover:text-white backdrop-blur-sm"
-        >
-          <Settings className="w-4 h-4 mr-2" />
-          Admin
-        </Button>
+        <Link href="/admin">
+          <Button
+            variant="outline"
+            size="sm"
+            className="bg-gray-800/80 border-gray-600 text-white hover:bg-gray-700 hover:text-white backdrop-blur-sm"
+          >
+            <Settings className="w-4 h-4 mr-2" />
+            Admin Dashboard
+          </Button>
+        </Link>
       </div>
-
-      {/* Admin Panel */}
-      <AdminPanel
-        isVisible={showAdminPanel}
-        onClose={() => setShowAdminPanel(false)}
-      />
 
       <div className="container mx-auto px-4 py-6">
         <div className="grid grid-cols-12 gap-6 h-screen">
