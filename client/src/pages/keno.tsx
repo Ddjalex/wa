@@ -1,14 +1,18 @@
 import { useState, useEffect } from "react";
-import { AnimationPreview } from "@/components/animation-preview";
-import { KenoBoard } from "@/components/keno-board";
-import { PlayerDashboard } from "@/components/player-dashboard";
+import { KenoGameBoard } from "@/components/keno-game-board";
+import { LotteryBallDisplay } from "@/components/lottery-ball-display";
+import { BettingTicket } from "@/components/betting-ticket";
+import { DrawHistory } from "@/components/draw-history";
+import { AdminPanel } from "@/components/admin-panel";
+import { Button } from "@/components/ui/button";
+import { Settings } from "lucide-react";
 import { useKenoGame } from "@/hooks/use-keno-game";
 import { useWebSocket } from "@/hooks/use-websocket";
 
 export default function KenoGame() {
   const [selectedNumbers, setSelectedNumbers] = useState<Set<number>>(new Set());
   const [currentBet, setCurrentBet] = useState(25);
-  const [showPreview, setShowPreview] = useState(true);
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
   
   const {
     gameState,
@@ -19,7 +23,8 @@ export default function KenoGame() {
     currentDrawNumber,
     nextDrawTime,
     placeBet,
-    isPlacingBet
+    isPlacingBet,
+    gameHistory
   } = useKenoGame();
 
   const { isConnected } = useWebSocket();
@@ -67,46 +72,71 @@ export default function KenoGame() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-game-navy to-gray-800">
-      {showPreview && (
-        <AnimationPreview
-          currentSequence={Array.from(drawnNumbers).slice(-5)}
-          currentDrawNumber={currentDrawNumber}
-          totalDraws={20}
-          nextDrawTime={nextDrawTime}
-          onToggle={() => setShowPreview(false)}
-        />
-      )}
-      
-      <div className={`container mx-auto px-4 py-6 ${showPreview ? 'pt-12' : 'pt-6'}`}>
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-          <div className="xl:col-span-3">
-            <KenoBoard
-              selectedNumbers={selectedNumbers}
-              drawnNumbers={drawnNumbers}
-              winningNumbers={winningNumbers}
-              isDrawing={isDrawing}
-              gameNumber={gameState?.currentGame?.gameNumber || 0}
-              drawCount={currentDrawNumber}
-              totalDraws={20}
-              onNumberSelect={handleNumberSelect}
-            />
-          </div>
-          
-          <div className="xl:col-span-1">
-            <PlayerDashboard
-              user={user}
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800">
+      {/* Admin Access Button */}
+      <div className="fixed top-4 right-4 z-40">
+        <Button
+          onClick={() => setShowAdminPanel(true)}
+          variant="ghost"
+          size="sm"
+          className="text-gray-400 hover:text-white"
+        >
+          <Settings className="w-4 h-4" />
+        </Button>
+      </div>
+
+      {/* Admin Panel */}
+      <AdminPanel
+        isVisible={showAdminPanel}
+        onClose={() => setShowAdminPanel(false)}
+      />
+
+      <div className="container mx-auto px-4 py-6">
+        <div className="grid grid-cols-12 gap-6 h-screen">
+          {/* Left Side - Betting Ticket */}
+          <div className="col-span-3">
+            <BettingTicket
+              user={user || null}
               selectedNumbers={selectedNumbers}
               currentBet={currentBet}
               onBetChange={setCurrentBet}
               potentialWin={calculatePotentialWin()}
-              drawnNumbers={Array.from(drawnNumbers)}
               onPlaceBet={handlePlaceBet}
               onClearSelections={handleClearSelections}
               isPlacingBet={isPlacingBet}
               canPlaceBet={selectedNumbers.size > 0 && !isDrawing}
-              nextDrawTime={nextDrawTime}
-              isConnected={isConnected}
+              drawnNumbers={drawnNumbers}
+            />
+          </div>
+
+          {/* Center - Main Game Area */}
+          <div className="col-span-6 flex flex-col space-y-6">
+            {/* Top Center - Lottery Ball Display */}
+            <div className="flex justify-center">
+              <LotteryBallDisplay
+                drawnNumbers={Array.from(drawnNumbers)}
+                currentDrawNumber={currentDrawNumber}
+                totalDraws={20}
+              />
+            </div>
+
+            {/* Center - 10x8 Number Grid */}
+            <div className="flex-1">
+              <KenoGameBoard
+                selectedNumbers={selectedNumbers}
+                drawnNumbers={drawnNumbers}
+                winningNumbers={winningNumbers}
+                isDrawing={isDrawing}
+                onNumberSelect={handleNumberSelect}
+              />
+            </div>
+          </div>
+
+          {/* Right Side - Draw History */}
+          <div className="col-span-3">
+            <DrawHistory
+              gameHistory={gameHistory || []}
+              userSelectedNumbers={selectedNumbers}
             />
           </div>
         </div>

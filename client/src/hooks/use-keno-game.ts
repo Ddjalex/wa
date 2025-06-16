@@ -36,6 +36,12 @@ export function useKenoGame() {
     refetchInterval: 5000,
   });
 
+  // Fetch game history
+  const { data: gameHistory = [] } = useQuery({
+    queryKey: ["/api/game/history"],
+    refetchInterval: 30000,
+  });
+
   useEffect(() => {
     if (currentGameData) {
       setGameState(currentGameData.state);
@@ -124,5 +130,6 @@ export function useKenoGame() {
     placeBet,
     isPlacingBet: placeBetMutation.isPending,
     isConnected,
+    gameHistory,
   };
 }
