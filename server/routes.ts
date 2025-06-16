@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { insertKenoBetSchema, insertKenoGameSchema } from "@shared/schema";
+import { BettingEngine } from "./betting-engine";
 import { z } from "zod";
 
 interface GameState {
@@ -244,9 +245,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Player-facing bet calculation endpoint
+  app.post("/api/calculate-bet", async (req, res) => {
+    try {
+      const { betAmount } = req.body;
+      
+      if (!betAmount || typeof betAmount !== "number") {
+        return res.status(400).json({ message: "Valid bet amount required" });
+      }
+
+      const result = BettingEngine.processPlayerBet(betAmount);
+      
+      if (!result.success) {
+        return res.status(400).json({ message: result.error });
+      }
+
+      res.json({
+        betAmount,
+        winAmount: result.winAmount,
+        currency: "Birr"
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Calculation error" });
+    }
+  });
+
   app.post("/api/bet", async (req, res) => {
     try {
       const betData = insertKenoBetSchema.parse(req.body);
+      
+      // Use betting engine to validate bet amount
+      const betResult = BettingEngine.processPlayerBet(betData.betAmount);
+      if (!betResult.success) {
+        return res.status(400).json({ message: betResult.error });
+      }
       
       // Validate user has sufficient balance
       const userId = betData.userId || 1; // Default to user 1 if not provided
@@ -301,18 +333,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Admin routes for profit control
+  // Admin routes for betting system
   app.get("/api/admin/settings", async (req, res) => {
     try {
-      // Return current admin settings
+      const limits = BettingEngine.getBettingLimits();
       res.json({
         profitMargin: 15, // Default 15%
-        minBet: 5,
-        maxBet: 1000,
+        minBet: limits.min,
+        maxBet: limits.max,
+        currency: limits.currency,
+        multiplier: limits.multiplier,
         maxPlayers: 100,
         revenue: 12450,
         profit: 1867,
         payouts: 10583
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Admin-only payout table endpoint
+  app.get("/api/admin/payout-table", async (req, res) => {
+    try {
+      const payoutTable = BettingEngine.generatePayoutTable();
+      res.json({
+        table: payoutTable,
+        limits: BettingEngine.getBettingLimits()
       });
     } catch (error) {
       res.status(500).json({ message: "Internal server error" });

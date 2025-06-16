@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import KenoGame from "@/pages/keno";
 import AdminDashboard from "@/pages/admin";
+import BettingCalculator from "@/pages/betting-calculator";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -12,6 +13,7 @@ function Router() {
     <Switch>
       <Route path="/" component={KenoGame} />
       <Route path="/admin" component={AdminDashboard} />
+      <Route path="/betting" component={BettingCalculator} />
       <Route component={NotFound} />
     </Switch>
   );
