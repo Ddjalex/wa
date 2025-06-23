@@ -23,8 +23,10 @@ let gameState: GameState = {
   nextDrawTime: Date.now() + 45000, // 45 seconds from now
 };
 
-const DRAW_INTERVAL = 60000; // 1 minute between games
+const COUNTDOWN_DURATION = 50000; // 50 seconds countdown before drawing
 const DRAWING_DURATION = 30000; // 30 seconds to draw all numbers
+const BREAK_DURATION = 15000; // 15 seconds break after drawing
+const TOTAL_CYCLE = COUNTDOWN_DURATION + DRAWING_DURATION + BREAK_DURATION; // 95 seconds total
 const NUMBERS_TO_DRAW = 20;
 
 function generateRandomNumbers(count: number): number[] {
@@ -86,17 +88,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       gameState.currentGame = await storage.createGame({
         gameNumber: 0, // Will be auto-assigned
         drawnNumbers: [],
-        status: "waiting",
+        status: "countdown",
       });
       gameState.drawingSequence = generateRandomNumbers(NUMBERS_TO_DRAW);
       gameState.currentDrawIndex = 0;
       gameState.isDrawing = false;
-      gameState.nextDrawTime = Date.now() + 45000;
+      gameState.nextDrawTime = Date.now() + COUNTDOWN_DURATION;
       
       broadcastToClients({
         type: 'gameState',
         data: gameState
       });
+      
+      // Schedule drawing to start after countdown
+      setTimeout(() => {
+        startDrawing();
+      }, COUNTDOWN_DURATION);
+      
     } catch (error) {
       console.error('Error initializing game:', error);
     }
@@ -170,7 +178,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
 
     gameState.isDrawing = false;
-    gameState.nextDrawTime = Date.now() + DRAW_INTERVAL;
+    gameState.nextDrawTime = Date.now() + BREAK_DURATION;
 
     broadcastToClients({
       type: 'gameCompleted',
@@ -181,10 +189,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
 
-    // Start next game after interval
+    // Start next game after 15-second break
     setTimeout(() => {
       initializeGame();
-    }, DRAW_INTERVAL);
+    }, BREAK_DURATION);
   }
 
   // Game timer

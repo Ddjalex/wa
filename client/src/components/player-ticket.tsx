@@ -35,7 +35,7 @@ export function PlayerTicket({ userId }: PlayerTicketProps) {
 
   // Filter bets based on actual status values
   const activeBets = bets.filter((bet: Bet) => bet.status === 'pending' || bet.status === 'active');
-  const completedBets = bets.filter((bet: Bet) => bet.status === 'completed' || bet.status === 'finished');
+  const completedBets = bets.filter((bet: Bet) => bet.status === 'completed' || bet.status === 'finished' || bet.status === 'lost' || bet.status === 'won');
 
   if (isLoading) {
     return (
