@@ -437,6 +437,76 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get pending transactions (admin only)
+  app.get("/api/transactions/pending", async (req, res) => {
+    try {
+      const transactions = await storage.getPendingTransactions();
+      res.json(transactions);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Approve transaction (admin only)
+  app.post("/api/transactions/:id/approve", async (req, res) => {
+    try {
+      const transactionId = parseInt(req.params.id);
+      const transaction = await storage.getTransactionById(transactionId);
+      
+      if (!transaction) {
+        return res.status(404).json({ message: "Transaction not found" });
+      }
+
+      if (transaction.status !== 'pending') {
+        return res.status(400).json({ message: "Transaction is not pending" });
+      }
+
+      // Update transaction status
+      await storage.updateTransaction(transactionId, {
+        status: 'completed',
+        completedAt: new Date()
+      });
+
+      // If it's a deposit, add to user balance
+      if (transaction.type === 'deposit' && transaction.userId) {
+        const user = await storage.getUser(transaction.userId);
+        if (user) {
+          await storage.updateUserBalance(transaction.userId, user.balance + transaction.amount);
+        }
+      }
+
+      res.json({ message: "Transaction approved successfully" });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Reject transaction (admin only)
+  app.post("/api/transactions/:id/reject", async (req, res) => {
+    try {
+      const transactionId = parseInt(req.params.id);
+      const transaction = await storage.getTransactionById(transactionId);
+      
+      if (!transaction) {
+        return res.status(404).json({ message: "Transaction not found" });
+      }
+
+      if (transaction.status !== 'pending') {
+        return res.status(400).json({ message: "Transaction is not pending" });
+      }
+
+      // Update transaction status
+      await storage.updateTransaction(transactionId, {
+        status: 'rejected',
+        completedAt: new Date()
+      });
+
+      res.json({ message: "Transaction rejected successfully" });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   app.post("/api/admin/transactions/:id/process", async (req, res) => {
     try {
       const transactionId = parseInt(req.params.id);

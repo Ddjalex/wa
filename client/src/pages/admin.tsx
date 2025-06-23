@@ -15,10 +15,14 @@ import {
   Users, 
   Target,
   ArrowLeft,
-  RefreshCw
+  RefreshCw,
+  CheckCircle,
+  XCircle,
+  Calculator
 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { formatCurrency } from "@/lib/utils";
 import { Link } from "wouter";
 
 interface AdminSettings {
@@ -29,6 +33,130 @@ interface AdminSettings {
   revenue: number;
   profit: number;
   payouts: number;
+}
+
+interface Transaction {
+  id: number;
+  type: string;
+  status: string;
+  amount: number;
+  method: string;
+  reference?: string;
+  description?: string;
+  createdAt: string;
+  completedAt?: string;
+  userId?: number;
+}
+
+function TransactionManagement() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: pendingTransactions = [] } = useQuery({
+    queryKey: ['/api/transactions/pending'],
+    select: (data: Transaction[]) => data.filter(t => t.status === 'pending')
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: async (transactionId: number) => {
+      const response = await apiRequest('POST', `/api/transactions/${transactionId}/approve`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/transactions/pending'] });
+      toast({
+        title: "Transaction Approved",
+        description: "The transaction has been successfully approved.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Approval Failed",
+        description: error.message || "Failed to approve transaction",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: async (transactionId: number) => {
+      const response = await apiRequest('POST', `/api/transactions/${transactionId}/reject`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/transactions/pending'] });
+      toast({
+        title: "Transaction Rejected",
+        description: "The transaction has been rejected.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Rejection Failed",
+        description: error.message || "Failed to reject transaction",
+        variant: "destructive",
+      });
+    }
+  });
+
+  return (
+    <div className="space-y-4">
+      {pendingTransactions.length === 0 ? (
+        <div className="text-center py-8">
+          <div className="text-gray-400">No pending transactions</div>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {pendingTransactions.map((transaction) => (
+            <div key={transaction.id} className="flex items-center justify-between p-4 bg-gray-700/50 rounded-lg border border-gray-600">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <Badge variant={transaction.type === 'deposit' ? 'default' : 'secondary'}>
+                    {transaction.type.toUpperCase()}
+                  </Badge>
+                  <span className="text-white font-medium">
+                    {formatCurrency(transaction.amount)}
+                  </span>
+                  <span className="text-gray-400 text-sm">
+                    via {transaction.method}
+                  </span>
+                </div>
+                <div className="text-sm text-gray-400">
+                  {transaction.description}
+                  {transaction.reference && (
+                    <span className="ml-2">• Ref: {transaction.reference}</span>
+                  )}
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {new Date(transaction.createdAt).toLocaleString()}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => approveMutation.mutate(transaction.id)}
+                  disabled={approveMutation.isPending || rejectMutation.isPending}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <CheckCircle className="w-4 h-4 mr-1" />
+                  Approve
+                </Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => rejectMutation.mutate(transaction.id)}
+                  disabled={approveMutation.isPending || rejectMutation.isPending}
+                >
+                  <XCircle className="w-4 h-4 mr-1" />
+                  Reject
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function AdminDashboard() {
@@ -150,8 +278,9 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-gray-800 border-gray-700">
+          <TabsList className="grid w-full grid-cols-5 bg-gray-800 border-gray-700">
             <TabsTrigger value="overview" className="text-white">Overview</TabsTrigger>
+            <TabsTrigger value="transactions" className="text-white">Transactions</TabsTrigger>
             <TabsTrigger value="settings" className="text-white">Game Settings</TabsTrigger>
             <TabsTrigger value="payouts" className="text-white">Payout Tables</TabsTrigger>
             <TabsTrigger value="analytics" className="text-white">Analytics</TabsTrigger>
@@ -244,6 +373,21 @@ export default function AdminDashboard() {
                     </Button>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Transactions Tab */}
+          <TabsContent value="transactions" className="space-y-6">
+            <Card className="bg-gray-800/50 border-gray-700">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center gap-2">
+                  <DollarSign className="w-5 h-5" />
+                  Transaction Management
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <TransactionManagement />
               </CardContent>
             </Card>
           </TabsContent>

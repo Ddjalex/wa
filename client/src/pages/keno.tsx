@@ -75,7 +75,7 @@ export default function KenoGame() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800">
       {/* Navigation Buttons */}
-      <div className="fixed top-4 right-4 z-40 flex gap-2">
+      <div className="fixed top-4 right-4 z-40">
         <Link href="/wallet">
           <Button
             variant="outline"
@@ -84,16 +84,6 @@ export default function KenoGame() {
           >
             <Wallet className="w-4 h-4 mr-2" />
             Wallet
-          </Button>
-        </Link>
-        <Link href="/admin">
-          <Button
-            variant="outline"
-            size="sm"
-            className="bg-gray-800/80 border-gray-600 text-white hover:bg-gray-700 hover:text-white backdrop-blur-sm"
-          >
-            <Settings className="w-4 h-4 mr-2" />
-            Admin Dashboard
           </Button>
         </Link>
       </div>

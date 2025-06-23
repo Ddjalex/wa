@@ -67,21 +67,21 @@ export function EnhancedKenoBoard({
     return {
       initial: {
         scale: 1,
-        boxShadow: "0 0 0px rgba(255, 255, 255, 0)"
+        boxShadow: "0 0 0px rgba(34, 197, 94, 0)"
       },
       animate: isJustDrawn ? {
-        scale: [1, 1.3, 1.1, 1],
+        scale: [1, 1.4, 1.2, 1],
         boxShadow: [
           "0 0 0px rgba(34, 197, 94, 0)",
-          "0 0 30px rgba(34, 197, 94, 1)",
-          "0 0 20px rgba(34, 197, 94, 0.6)",
-          "0 0 10px rgba(34, 197, 94, 0.3)"
+          "0 0 40px rgba(34, 197, 94, 1)",
+          "0 0 25px rgba(34, 197, 94, 0.8)",
+          "0 0 15px rgba(34, 197, 94, 0.5)"
         ]
       } : isDrawnNumber ? {
-        boxShadow: "0 0 8px rgba(34, 197, 94, 0.5)"
+        boxShadow: "0 0 10px rgba(34, 197, 94, 0.6)"
       } : {},
       transition: {
-        duration: isJustDrawn ? 2 : 0.3,
+        duration: isJustDrawn ? 3 : 0.3,
         ease: "easeInOut"
       }
     };
