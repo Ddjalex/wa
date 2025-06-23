@@ -271,10 +271,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Insufficient balance" });
       }
 
-      // Validate game is available for betting (waiting or drawing)
-      const currentGame = await storage.getCurrentGame();
-      if (!currentGame || (currentGame.status !== "waiting" && currentGame.status !== "drawing")) {
-        return res.status(400).json({ message: "No active game for betting" });
+      // Get or create current game for betting
+      let currentGame = await storage.getCurrentGame();
+      if (!currentGame || currentGame.status === "completed") {
+        // Create new game if none exists or current one is completed
+        currentGame = await storage.createGame({
+          gameNumber: 0, // Will be auto-assigned
+          drawnNumbers: [],
+          status: "waiting",
+        });
+        gameState.currentGame = currentGame;
+        gameState.isDrawing = false;
+        gameState.nextDrawTime = Date.now() + 45000;
       }
       
       // Don't allow betting if drawing has started
@@ -287,10 +295,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Must select between 1 and 10 numbers" });
       }
 
-      // Create bet with proper userId
+      // Create bet with proper userId and gameId
       const bet = await storage.createBet({
-        ...betData,
         userId: userId,
+        selectedNumbers: betData.selectedNumbers,
+        betAmount: betData.betAmount,
         gameId: currentGame.id,
       });
 
@@ -477,6 +486,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const user = await storage.getUser(transaction.userId);
         if (user) {
           await storage.updateUserBalance(transaction.userId, user.balance + transaction.amount);
+        }
+      }
+      
+      // If it's a withdrawal, deduct from user balance
+      if (transaction.type === 'withdrawal' && transaction.userId) {
+        const user = await storage.getUser(transaction.userId);
+        if (user) {
+          await storage.updateUserBalance(transaction.userId, user.balance - transaction.amount);
         }
       }
 

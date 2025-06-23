@@ -57,6 +57,7 @@ export const insertKenoGameSchema = createInsertSchema(kenoGames).pick({
 
 export const insertKenoBetSchema = createInsertSchema(kenoBets).pick({
   userId: true,
+  gameId: true,
   selectedNumbers: true,
   betAmount: true,
 });

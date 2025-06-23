@@ -5,6 +5,7 @@ import { AnimatedDrawingPreview } from "@/components/animated-drawing-preview";
 import { EnhancedKenoBoard } from "@/components/enhanced-keno-board";
 import { BettingTicket } from "@/components/betting-ticket";
 import { DrawHistory } from "@/components/draw-history";
+import { PlayerTicket } from "@/components/player-ticket";
 import { Button } from "@/components/ui/button";
 import { Settings, Wallet } from "lucide-react";
 import { useKenoGame } from "@/hooks/use-keno-game";
@@ -55,17 +56,30 @@ export default function KenoGame() {
     console.log('Placing bet with numbers:', Array.from(selectedNumbers));
     
     try {
-      await placeBet({
-        userId: 1, // Default user
-        selectedNumbers: Array.from(selectedNumbers),
-        betAmount: currentBet * 100, // Convert to cents
+      const response = await fetch('/api/bet', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: 1,
+          selectedNumbers: Array.from(selectedNumbers),
+          betAmount: currentBet * 100, // Convert to cents
+        }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to place bet');
+      }
       
-      console.log('Bet placed successfully');
-      // Clear selections after successful bet
-      setSelectedNumbers(new Set());
-    } catch (error) {
-      console.error('Failed to place bet:', error);
+      const result = await response.json();
+      console.log('Bet placed successfully:', result);
+      
+      // Don't clear selections immediately - let user see what they bet on
+      // setSelectedNumbers(new Set());
+    } catch (error: any) {
+      console.error('Failed to place bet:', error.message);
     }
   };
 
@@ -143,8 +157,9 @@ export default function KenoGame() {
             </div>
           </div>
 
-          {/* Right Side - Draw History */}
-          <div className="col-span-3">
+          {/* Right Side - Player Tickets & Draw History */}
+          <div className="col-span-3 space-y-4">
+            <PlayerTicket userId={1} />
             <DrawHistory
               gameHistory={gameHistory || []}
               userSelectedNumbers={selectedNumbers}
