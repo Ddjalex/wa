@@ -7,6 +7,7 @@ import KenoGame from "@/pages/keno";
 import AdminDashboard from "@/pages/admin";
 import BettingCalculator from "@/pages/betting-calculator";
 import WalletPage from "@/pages/wallet";
+import PayoutAdmin from "@/pages/payout-admin";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -16,6 +17,7 @@ function Router() {
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/betting" component={BettingCalculator} />
       <Route path="/wallet" component={WalletPage} />
+      <Route path="/payout-admin" component={PayoutAdmin} />
       <Route component={NotFound} />
     </Switch>
   );

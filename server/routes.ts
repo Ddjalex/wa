@@ -4,6 +4,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { insertKenoBetSchema, insertKenoGameSchema, insertTransactionSchema } from "@shared/schema";
 import { BettingEngine } from "./betting-engine";
+import { PayoutEngine } from "./payout-engine";
 import { z } from "zod";
 
 interface GameState {
@@ -35,27 +36,10 @@ function generateRandomNumbers(count: number): number[] {
 }
 
 function calculateWinnings(selectedNumbers: number[], drawnNumbers: number[], betAmount: number): { winAmount: number; matchedNumbers: number } {
-  const matches = selectedNumbers.filter(num => drawnNumbers.includes(num)).length;
-  
-  // Simplified payout table (matches : multiplier)
-  const payoutTable: { [key: number]: number } = {
-    0: 0,
-    1: 0,
-    2: 0,
-    3: 3,
-    4: 5,
-    5: 10,
-    6: 25,
-    7: 50,
-    8: 100,
-    9: 250,
-    10: 500,
-  };
-  
-  const multiplier = payoutTable[matches] || 0;
+  const result = PayoutEngine.calculateWinnings(betAmount, selectedNumbers, drawnNumbers);
   return {
-    winAmount: betAmount * multiplier,
-    matchedNumbers: matches,
+    winAmount: result.winAmount,
+    matchedNumbers: result.matchedNumbers
   };
 }
 
@@ -496,6 +480,121 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(transactions);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch pending transactions" });
+    }
+  });
+
+  // Payout table management endpoints
+  app.get("/api/admin/payout-table", async (req, res) => {
+    try {
+      const payoutTable = PayoutEngine.getPayoutTable();
+      const spotAnalysis = PayoutEngine.getSpotAnalysis();
+      const houseEdgeAnalysis = PayoutEngine.validateHouseEdge(0.25);
+      
+      res.json({
+        payoutTable,
+        spotAnalysis,
+        houseEdgeAnalysis
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch payout table" });
+    }
+  });
+
+  app.post("/api/admin/payout-table/update", async (req, res) => {
+    try {
+      const { spots, matches, multiplier } = req.body;
+      
+      if (!spots || matches === undefined || multiplier === undefined) {
+        return res.status(400).json({ message: "Invalid payout update data" });
+      }
+      
+      PayoutEngine.updatePayout(spots, matches, multiplier);
+      
+      // Return updated analysis
+      const spotAnalysis = PayoutEngine.getSpotAnalysis();
+      const houseEdgeAnalysis = PayoutEngine.validateHouseEdge(0.25);
+      
+      res.json({
+        message: "Payout updated successfully",
+        spotAnalysis,
+        houseEdgeAnalysis
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to update payout" });
+    }
+  });
+
+  app.get("/api/admin/payout-analysis/:spots", async (req, res) => {
+    try {
+      const spots = parseInt(req.params.spots);
+      if (spots < 1 || spots > 10) {
+        return res.status(400).json({ message: "Invalid spot count" });
+      }
+      
+      const currentRTP = PayoutEngine.calculateRTP(spots);
+      const recommendations = PayoutEngine.getRecommendedMultipliers(spots, 0.75);
+      
+      const detailedAnalysis = [];
+      for (let matches = 0; matches <= spots; matches++) {
+        const details = PayoutEngine.getProbabilityDetails(spots, matches);
+        const currentMultiplier = PayoutEngine.getMultiplier(spots, matches);
+        
+        detailedAnalysis.push({
+          matches,
+          currentMultiplier,
+          probability: details.probability,
+          odds: details.odds,
+          frequency: details.frequency
+        });
+      }
+      
+      res.json({
+        spots,
+        currentRTP,
+        recommendations,
+        detailedAnalysis
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to analyze payout" });
+    }
+  });
+
+  app.get("/api/payout-calculator", async (req, res) => {
+    try {
+      const { spots, betAmount = 100 } = req.query;
+      const spotsNum = parseInt(spots as string);
+      const betAmountNum = parseInt(betAmount as string);
+      
+      if (!spotsNum || spotsNum < 1 || spotsNum > 10) {
+        return res.status(400).json({ message: "Invalid spot count" });
+      }
+      
+      const payouts = [];
+      for (let matches = 0; matches <= spotsNum; matches++) {
+        const multiplier = PayoutEngine.getMultiplier(spotsNum, matches);
+        const details = PayoutEngine.getProbabilityDetails(spotsNum, matches);
+        
+        payouts.push({
+          matches,
+          multiplier,
+          winAmount: betAmountNum * multiplier,
+          probability: details.probability,
+          odds: details.odds,
+          frequency: details.frequency
+        });
+      }
+      
+      const expectedRTP = PayoutEngine.calculateRTP(spotsNum);
+      
+      res.json({
+        spots: spotsNum,
+        betAmount: betAmountNum,
+        payouts,
+        expectedRTP,
+        houseEdge: (1 - expectedRTP) * 100
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to calculate payouts" });
     }
   });
 

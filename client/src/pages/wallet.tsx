@@ -245,19 +245,43 @@ export default function WalletPage() {
                       <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
                       <SelectItem value="mobile_money">Mobile Money</SelectItem>
                       <SelectItem value="credit_card">Credit Card</SelectItem>
+                      <SelectItem value="cryptocurrency">Cryptocurrency</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="deposit-reference" className="text-white">Reference (Optional)</Label>
-                  <Input
-                    id="deposit-reference"
-                    type="text"
-                    value={depositReference}
-                    onChange={(e) => setDepositReference(e.target.value)}
-                    placeholder="Transaction reference"
-                    className="bg-gray-800 border-gray-600 text-white"
-                  />
+                  <Label htmlFor="deposit-reference" className="text-white">
+                    {depositMethod === "cryptocurrency" ? "Crypto Deposit Address" : "Reference (Optional)"}
+                  </Label>
+                  {depositMethod === "cryptocurrency" ? (
+                    <div className="space-y-2">
+                      <div className="bg-gray-800 border border-gray-600 rounded-md p-3">
+                        <div className="text-yellow-400 font-mono text-sm break-all">
+                          bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh
+                        </div>
+                        <div className="text-gray-400 text-xs mt-1">
+                          CEO Bitcoin Deposit Address
+                        </div>
+                      </div>
+                      <Input
+                        id="deposit-reference"
+                        type="text"
+                        value={depositReference}
+                        onChange={(e) => setDepositReference(e.target.value)}
+                        placeholder="Your transaction hash"
+                        className="bg-gray-800 border-gray-600 text-white"
+                      />
+                    </div>
+                  ) : (
+                    <Input
+                      id="deposit-reference"
+                      type="text"
+                      value={depositReference}
+                      onChange={(e) => setDepositReference(e.target.value)}
+                      placeholder="Transaction reference"
+                      className="bg-gray-800 border-gray-600 text-white"
+                    />
+                  )}
                 </div>
                 <Button
                   type="submit"

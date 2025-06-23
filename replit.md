@@ -102,6 +102,12 @@ Changelog:
 - June 16, 2025. Implemented Ethiopian Birr betting system (20-5,000 Birr, 50x multiplier)
 - June 16, 2025. Added secure admin-side betting engine with player-facing calculator
 - June 16, 2025. Created dedicated admin dashboard at /admin and betting calculator at /betting
+- June 23, 2025. Implemented comprehensive payment system with deposit/withdrawal functionality
+- June 23, 2025. Added cryptocurrency payment option with CEO Bitcoin deposit address
+- June 23, 2025. Created advanced payout engine with configurable odds and RTP calculations
+- June 23, 2025. Implemented 3/3 match payout at 50x multiplier (1,500 Birr for 30 Birr bet)
+- June 23, 2025. Added payout table management system with real-time RTP analysis
+- June 23, 2025. Created admin interface for adjusting Keno odds and house edge control
 ```
 
 ## User Preferences
