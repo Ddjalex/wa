@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { insertKenoBetSchema, insertKenoGameSchema } from "@shared/schema";
+import { insertKenoBetSchema, insertKenoGameSchema, insertTransactionSchema } from "@shared/schema";
 import { BettingEngine } from "./betting-engine";
 import { z } from "zod";
 
@@ -387,6 +387,115 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Transaction endpoints for payment system
+  app.post("/api/transactions/deposit", async (req, res) => {
+    try {
+      const { userId, amount, method = "bank_transfer", reference } = req.body;
+      
+      if (!userId || !amount || amount <= 0) {
+        return res.status(400).json({ message: "Invalid deposit request" });
+      }
+
+      const transaction = await storage.createTransaction({
+        type: "deposit",
+        userId,
+        amount,
+        method,
+        reference,
+        description: `Deposit via ${method}`
+      });
+
+      res.status(201).json(transaction);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create deposit" });
+    }
+  });
+
+  app.post("/api/transactions/withdraw", async (req, res) => {
+    try {
+      const { userId, amount, method = "bank_transfer", reference } = req.body;
+      
+      if (!userId || !amount || amount <= 0) {
+        return res.status(400).json({ message: "Invalid withdrawal request" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user || user.balance < amount) {
+        return res.status(400).json({ message: "Insufficient balance" });
+      }
+
+      const transaction = await storage.createTransaction({
+        type: "withdrawal",
+        userId,
+        amount,
+        method,
+        reference,
+        description: `Withdrawal via ${method}`
+      });
+
+      res.status(201).json(transaction);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create withdrawal" });
+    }
+  });
+
+  app.get("/api/transactions/user/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
+      const transactions = await storage.getUserTransactions(userId, limit);
+      res.json(transactions);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch transactions" });
+    }
+  });
+
+  app.post("/api/admin/transactions/:id/process", async (req, res) => {
+    try {
+      const transactionId = parseInt(req.params.id);
+      const { status, processedBy = 1 } = req.body;
+
+      if (!["completed", "rejected"].includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+
+      const transaction = await storage.getTransactionById(transactionId);
+      if (!transaction) {
+        return res.status(404).json({ message: "Transaction not found" });
+      }
+
+      await storage.updateTransaction(transactionId, {
+        status,
+        processedBy,
+        completedAt: new Date()
+      });
+
+      // Update user balance if approved
+      if (status === "completed") {
+        const user = await storage.getUser(transaction.userId);
+        if (user) {
+          const newBalance = transaction.type === "deposit" 
+            ? user.balance + transaction.amount
+            : user.balance - transaction.amount;
+          await storage.updateUserBalance(user.id, newBalance);
+        }
+      }
+
+      res.json({ message: "Transaction processed successfully" });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to process transaction" });
+    }
+  });
+
+  app.get("/api/admin/transactions/pending", async (req, res) => {
+    try {
+      const transactions = await storage.getPendingTransactions();
+      res.json(transactions);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch pending transactions" });
     }
   });
 

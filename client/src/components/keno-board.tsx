@@ -10,6 +10,8 @@ interface KenoBoardProps {
   drawCount: number;
   totalDraws: number;
   onNumberSelect: (number: number) => void;
+  drawingSequence: number[];
+  currentDrawIndex: number;
 }
 
 export function KenoBoard({
