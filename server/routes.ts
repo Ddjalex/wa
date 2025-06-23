@@ -271,10 +271,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Insufficient balance" });
       }
 
-      // Validate game is in waiting state
+      // Validate game is available for betting (waiting or drawing)
       const currentGame = await storage.getCurrentGame();
-      if (!currentGame || currentGame.status !== "waiting") {
+      if (!currentGame || (currentGame.status !== "waiting" && currentGame.status !== "drawing")) {
         return res.status(400).json({ message: "No active game for betting" });
+      }
+      
+      // Don't allow betting if drawing has started
+      if (gameState.isDrawing) {
+        return res.status(400).json({ message: "Betting closed - drawing in progress" });
       }
 
       // Validate selected numbers

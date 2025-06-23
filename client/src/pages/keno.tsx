@@ -36,14 +36,23 @@ export default function KenoGame() {
     const newSelection = new Set(selectedNumbers);
     if (newSelection.has(number)) {
       newSelection.delete(number);
+      console.log(`Deselected number ${number}, current selection:`, Array.from(newSelection));
     } else if (newSelection.size < 10) {
       newSelection.add(number);
+      console.log(`Selected number ${number}, current selection:`, Array.from(newSelection));
+    } else {
+      console.log('Maximum 10 numbers can be selected');
     }
     setSelectedNumbers(newSelection);
   };
 
   const handlePlaceBet = async () => {
-    if (selectedNumbers.size === 0) return;
+    if (selectedNumbers.size === 0) {
+      console.log('No numbers selected');
+      return;
+    }
+    
+    console.log('Placing bet with numbers:', Array.from(selectedNumbers));
     
     try {
       await placeBet({
@@ -52,6 +61,7 @@ export default function KenoGame() {
         betAmount: currentBet * 100, // Convert to cents
       });
       
+      console.log('Bet placed successfully');
       // Clear selections after successful bet
       setSelectedNumbers(new Set());
     } catch (error) {
