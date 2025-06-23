@@ -96,13 +96,17 @@ export function useKenoGame() {
       const response = await apiRequest("POST", "/api/bet", betData);
       return response.json();
     },
-    onSuccess: () => {
-      // Refresh user balance
+    onSuccess: (data, variables) => {
+      // Refresh user balance and tickets
       queryClient.invalidateQueries({ queryKey: ["/api/user/1"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/user", variables.userId, "bets"] });
     },
   });
 
-  const placeBet = (betData: { userId: number; selectedNumbers: number[]; betAmount: number }) => {
+  const placeBet = async (betData: { userId: number; selectedNumbers: number[]; betAmount: number }) => {
+    if (placeBetMutation.isPending) {
+      throw new Error("Bet already being placed");
+    }
     return placeBetMutation.mutateAsync(betData);
   };
 

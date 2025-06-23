@@ -48,36 +48,22 @@ export default function KenoGame() {
   };
 
   const handlePlaceBet = async () => {
-    if (selectedNumbers.size === 0) {
-      console.log('No numbers selected');
+    if (selectedNumbers.size === 0 || isPlacingBet) {
       return;
     }
     
     console.log('Placing bet with numbers:', Array.from(selectedNumbers));
     
     try {
-      const response = await fetch('/api/bet', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: 1,
-          selectedNumbers: Array.from(selectedNumbers),
-          betAmount: currentBet * 100, // Convert to cents
-        }),
+      await placeBet({
+        userId: 1,
+        selectedNumbers: Array.from(selectedNumbers),
+        betAmount: currentBet * 100, // Convert to cents
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to place bet');
-      }
       
-      const result = await response.json();
-      console.log('Bet placed successfully:', result);
-      
-      // Don't clear selections immediately - let user see what they bet on
-      // setSelectedNumbers(new Set());
+      console.log('Bet placed successfully');
+      // Clear selections after successful bet
+      setSelectedNumbers(new Set());
     } catch (error: any) {
       console.error('Failed to place bet:', error.message);
     }
