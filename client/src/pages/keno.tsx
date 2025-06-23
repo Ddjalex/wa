@@ -6,15 +6,18 @@ import { EnhancedKenoBoard } from "@/components/enhanced-keno-board";
 import { BettingTicket } from "@/components/betting-ticket";
 import { DrawHistory } from "@/components/draw-history";
 import { PlayerTicket } from "@/components/player-ticket";
+import { SoundControls } from "@/components/sound-controls";
 import { Button } from "@/components/ui/button";
 import { Settings, Wallet } from "lucide-react";
 import { useKenoGame } from "@/hooks/use-keno-game";
 import { useWebSocket } from "@/hooks/use-websocket";
+import { SoundManager } from "@/lib/sound-manager";
 import { Link } from "wouter";
 
 export default function KenoGame() {
   const [selectedNumbers, setSelectedNumbers] = useState<Set<number>>(new Set());
   const [currentBet, setCurrentBet] = useState(25);
+  const [soundManager] = useState(() => SoundManager.getInstance());
   
   const {
     gameState,
@@ -55,6 +58,10 @@ export default function KenoGame() {
     console.log('Placing bet with numbers:', Array.from(selectedNumbers));
     
     try {
+      // Play bet placed sound
+      soundManager.resumeAudioContext();
+      soundManager.playBetPlaced();
+      
       await placeBet({
         userId: 1,
         selectedNumbers: Array.from(selectedNumbers),
@@ -66,6 +73,8 @@ export default function KenoGame() {
       setSelectedNumbers(new Set());
     } catch (error: any) {
       console.error('Failed to place bet:', error.message);
+      // Play error sound on failed bet
+      soundManager.playError();
     }
   };
 
@@ -85,7 +94,8 @@ export default function KenoGame() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800">
       {/* Navigation Buttons */}
-      <div className="fixed top-4 right-4 z-40">
+      <div className="fixed top-4 right-4 z-40 flex gap-2">
+        <SoundControls />
         <Link href="/wallet">
           <Button
             variant="outline"

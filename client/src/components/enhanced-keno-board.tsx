@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Ball } from "@/components/ui/ball";
+import { SoundManager } from "@/lib/sound-manager";
 
 interface EnhancedKenoBoardProps {
   selectedNumbers: Set<number>;
@@ -25,16 +26,28 @@ export function EnhancedKenoBoard({
 }: EnhancedKenoBoardProps) {
   const [recentlyDrawn, setRecentlyDrawn] = useState<number | null>(null);
   const [animatingNumbers, setAnimatingNumbers] = useState<Set<number>>(new Set());
+  const [soundManager] = useState(() => SoundManager.getInstance());
 
   const numbers = Array.from({ length: 80 }, (_, i) => i + 1);
 
-  // Track recently drawn numbers for animation
+  // Track recently drawn numbers for animation with sound effects
   useEffect(() => {
     if (isDrawing && drawingSequence.length > 0 && currentDrawIndex >= 0) {
       const currentNumber = drawingSequence[currentDrawIndex];
       if (currentNumber && currentNumber !== recentlyDrawn) {
+        // Resume audio context and play ball bounce sound
+        soundManager.resumeAudioContext();
+        soundManager.playBallBounce();
+        
         setRecentlyDrawn(currentNumber);
         setAnimatingNumbers(prev => new Set([...prev, currentNumber]));
+        
+        // Check if this is a winning number and play special sound
+        if (winningNumbers.has(currentNumber)) {
+          setTimeout(() => {
+            soundManager.playWinningNumber();
+          }, 300);
+        }
         
         // Remove from animating set after animation completes
         const timer = setTimeout(() => {
@@ -43,12 +56,19 @@ export function EnhancedKenoBoard({
             newSet.delete(currentNumber);
             return newSet;
           });
+          
+          // If this is the last number, play completion sound
+          if (currentDrawIndex === drawingSequence.length - 1) {
+            setTimeout(() => {
+              soundManager.playDrawingComplete();
+            }, 500);
+          }
         }, 2000);
 
         return () => clearTimeout(timer);
       }
     }
-  }, [currentDrawIndex, drawingSequence, isDrawing, recentlyDrawn]);
+  }, [currentDrawIndex, drawingSequence, isDrawing, recentlyDrawn, winningNumbers, soundManager]);
 
   // Calculate which numbers should be visible based on drawing progress
   const visibleDrawnNumbers = new Set<number>();

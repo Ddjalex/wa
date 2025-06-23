@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { SoundManager } from "@/lib/sound-manager";
 
 interface BallProps {
   number: number;
@@ -18,6 +19,15 @@ export function Ball({
   onClick,
   disabled
 }: BallProps) {
+  const soundManager = SoundManager.getInstance();
+  
+  const handleClick = () => {
+    if (!disabled) {
+      soundManager.resumeAudioContext();
+      soundManager.playNumberSelect();
+      onClick();
+    }
+  };
   const getVariant = () => {
     if (isWinner) return "winner";
     if (isDrawn) return "drawn";
@@ -57,7 +67,7 @@ export function Ball({
         disabled && !isDrawn ? "cursor-not-allowed opacity-50" : "cursor-pointer hover:scale-105"
       )}
       data-number={number}
-      onClick={disabled ? undefined : onClick}
+      onClick={disabled ? undefined : handleClick}
       animate={variants[ballVariant]}
       whileHover={disabled ? {} : { scale: 1.05 }}
       whileTap={disabled ? {} : { scale: 0.95 }}

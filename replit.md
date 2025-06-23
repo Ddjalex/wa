@@ -108,6 +108,8 @@ Changelog:
 - June 23, 2025. Implemented 3/3 match payout at 50x multiplier (1,500 Birr for 30 Birr bet)
 - June 23, 2025. Added payout table management system with real-time RTP analysis
 - June 23, 2025. Created admin interface for adjusting Keno odds and house edge control
+- June 23, 2025. Implemented comprehensive playful sound effects system with Web Audio API
+- June 23, 2025. Added sound controls with volume adjustment and enable/disable functionality
 ```
 
 ## User Preferences

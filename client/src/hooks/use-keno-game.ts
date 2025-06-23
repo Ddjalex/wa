@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useWebSocket } from "./use-websocket";
 import { AnimationManager } from "@/lib/animation-manager";
+import { SoundManager } from "@/lib/sound-manager";
 import { apiRequest } from "@/lib/queryClient";
 import type { User, KenoBet } from "@shared/schema";
 
@@ -24,6 +25,7 @@ export function useKenoGame() {
   
   const queryClient = useQueryClient();
   const animationManager = new AnimationManager();
+  const soundManager = SoundManager.getInstance();
 
   // Fetch current user
   const { data: user } = useQuery<User>({
@@ -63,6 +65,9 @@ export function useKenoGame() {
         setDrawnNumbers(new Set());
         setWinningNumbers(new Set());
         setCurrentDrawNumber(0);
+        // Play drawing start sound
+        soundManager.resumeAudioContext();
+        soundManager.playDrawingStart();
         break;
         
       case 'numberDrawn':
@@ -81,6 +86,9 @@ export function useKenoGame() {
         // Update winning numbers based on user's bets
         // This would typically be calculated on the server
         setWinningNumbers(new Set([7, 67])); // Mock data
+        
+        // Play game completion sound
+        soundManager.playDrawingComplete();
         
         // Refresh user data to update balance
         queryClient.invalidateQueries({ queryKey: ["/api/user/1"] });
