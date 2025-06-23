@@ -26,12 +26,16 @@ export function PlayerTicket({ userId }: PlayerTicketProps) {
     queryKey: ['/api/user', userId, 'bets'],
     queryFn: async () => {
       const response = await fetch(`/api/user/${userId}/bets`);
-      return response.json();
-    }
+      const data = await response.json();
+      console.log('Fetched bets:', data);
+      return data;
+    },
+    refetchInterval: 5000, // Refresh every 5 seconds
   });
 
-  const activeBets = bets.filter((bet: Bet) => bet.status === 'pending');
-  const completedBets = bets.filter((bet: Bet) => bet.status === 'completed');
+  // Filter bets based on actual status values
+  const activeBets = bets.filter((bet: Bet) => bet.status === 'pending' || bet.status === 'active');
+  const completedBets = bets.filter((bet: Bet) => bet.status === 'completed' || bet.status === 'finished');
 
   if (isLoading) {
     return (
