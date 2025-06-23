@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { KenoGameBoard } from "@/components/keno-game-board";
 import { LotteryBallDisplay } from "@/components/lottery-ball-display";
+import { AnimatedDrawingPreview } from "@/components/animated-drawing-preview";
+import { EnhancedKenoBoard } from "@/components/enhanced-keno-board";
 import { BettingTicket } from "@/components/betting-ticket";
 import { DrawHistory } from "@/components/draw-history";
 import { Button } from "@/components/ui/button";
@@ -116,23 +118,27 @@ export default function KenoGame() {
 
           {/* Center - Main Game Area */}
           <div className="col-span-6 flex flex-col space-y-6">
-            {/* Top Center - Lottery Ball Display */}
+            {/* Top Center - Animated Drawing Preview */}
             <div className="flex justify-center">
-              <LotteryBallDisplay
-                drawnNumbers={Array.from(drawnNumbers)}
-                currentDrawNumber={currentDrawNumber}
-                totalDraws={20}
+              <AnimatedDrawingPreview
+                drawnNumbers={gameState?.drawingSequence || []}
+                currentDrawIndex={gameState?.currentDrawIndex || 0}
+                isDrawing={isDrawing}
+                gameNumber={gameState?.currentGame?.gameNumber || 1}
               />
             </div>
 
             {/* Center - 10x8 Number Grid */}
             <div className="flex-1">
-              <KenoGameBoard
+              <EnhancedKenoBoard
                 selectedNumbers={selectedNumbers}
                 drawnNumbers={drawnNumbers}
                 winningNumbers={winningNumbers}
                 isDrawing={isDrawing}
+                gameNumber={gameState?.currentGame?.gameNumber || 1}
                 onNumberSelect={handleNumberSelect}
+                drawingSequence={gameState?.drawingSequence || []}
+                currentDrawIndex={gameState?.currentDrawIndex || 0}
               />
             </div>
           </div>

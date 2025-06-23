@@ -11,6 +11,7 @@ interface GameState {
   currentDrawIndex: number;
   isDrawing: boolean;
   nextDrawTime: number;
+  animationSpeed?: number;
 }
 
 export function useKenoGame() {
