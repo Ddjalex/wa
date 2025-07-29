@@ -122,9 +122,9 @@ export default function KenoGame() {
       isSoundEnabled={isSoundEnabled}
     >
       <div className="space-y-8">
-        {/* Top Row - Drawing Preview */}
+        {/* Top Row - Drawing Preview (matches dash.bet style) */}
         <div className="grid grid-cols-12 gap-8">
-          <div className="col-span-8 col-start-3">
+          <div className="col-span-6 col-start-4">
             <ModernDrawingPreview
               drawnNumbers={gameState?.drawingSequence || []}
               currentDrawIndex={gameState?.currentDrawIndex || 0}
