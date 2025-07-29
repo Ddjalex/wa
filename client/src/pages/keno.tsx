@@ -5,6 +5,9 @@ import { ModernBettingPanel } from "@/components/modern-betting-panel";
 import { ModernDrawDisplay } from "@/components/modern-draw-display";
 import { ModernDrawingPreview } from "@/components/modern-drawing-preview";
 import { ModernTicketDisplay } from "@/components/modern-ticket-display";
+import { BalanceModal } from "@/components/balance-modal";
+import { SettingsModal } from "@/components/settings-modal";
+import { ProfileModal } from "@/components/profile-modal";
 import { useKenoGame } from "@/hooks/use-keno-game";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { SoundManager } from "@/lib/sound-manager";
@@ -17,6 +20,9 @@ export default function KenoGame() {
   const [timeUntilNext, setTimeUntilNext] = useState(60);
   const [showTickets, setShowTickets] = useState(false);
   const [activeBets, setActiveBets] = useState<any[]>([]);
+  const [showBalance, setShowBalance] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   
   const {
     gameState,
@@ -105,15 +111,15 @@ export default function KenoGame() {
   };
 
   const handleBalanceClick = () => {
-    console.log('Balance clicked - show deposit/withdrawal options');
+    setShowBalance(true);
   };
 
   const handleSettingsClick = () => {
-    console.log('Settings clicked - show game settings');
+    setShowSettings(true);
   };
 
   const handleProfileClick = () => {
-    console.log('Profile clicked - show user profile');
+    setShowProfile(true);
   };
 
   const handleTicketsClick = () => {
@@ -203,11 +209,30 @@ export default function KenoGame() {
         </div>
       </div>
 
-      {/* Ticket Display Modal */}
+      {/* Modals */}
       <ModernTicketDisplay
         activeBets={activeBets}
         isVisible={showTickets}
         onClose={() => setShowTickets(false)}
+      />
+      
+      <BalanceModal
+        isVisible={showBalance}
+        onClose={() => setShowBalance(false)}
+        userBalance={user?.balance || 0}
+      />
+
+      <SettingsModal
+        isVisible={showSettings}
+        onClose={() => setShowSettings(false)}
+        isSoundEnabled={isSoundEnabled}
+        onSoundToggle={handleSoundToggle}
+      />
+
+      <ProfileModal
+        isVisible={showProfile}
+        onClose={() => setShowProfile(false)}
+        user={user}
       />
     </ModernKenoLayout>
   );
