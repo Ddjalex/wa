@@ -1,9 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { 
-  Sparkles, 
   Play, 
   Pause,
   Clock
@@ -24,6 +21,8 @@ export function ModernDrawingPreview({
 }: ModernDrawingPreviewProps) {
   const displayNumbers = drawnNumbers.slice(0, Math.max(0, currentDrawIndex));
   const currentNumber = drawnNumbers[currentDrawIndex];
+  const lastDrawnNumber = drawnNumbers[drawnNumbers.length - 1];
+  const centerNumber = isDrawing ? currentNumber : lastDrawnNumber;
 
   return (
     <div className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-sm rounded-2xl border border-slate-700/50 shadow-2xl p-8">
@@ -40,16 +39,21 @@ export function ModernDrawingPreview({
 
       {/* Current Drawing Ball - Large Center Display (matches image style) */}
       <div className="text-center mb-8">
-        {isDrawing && currentNumber ? (
+        {centerNumber ? (
           <motion.div
-            key={currentNumber}
-            className="w-32 h-32 mx-auto bg-gradient-to-br from-slate-600 to-slate-700 rounded-full flex items-center justify-center text-white text-5xl font-bold border-4 border-slate-500 shadow-2xl relative"
-            initial={{ scale: 0, rotate: -180, opacity: 0 }}
-            animate={{ 
+            key={centerNumber}
+            className={cn(
+              "w-32 h-32 mx-auto rounded-full flex items-center justify-center text-white text-5xl font-bold border-4 shadow-2xl relative",
+              isDrawing 
+                ? "bg-gradient-to-br from-slate-600 to-slate-700 border-slate-500" 
+                : "bg-gradient-to-br from-slate-600 to-slate-700 border-slate-500"
+            )}
+            initial={isDrawing ? { scale: 0, rotate: -180, opacity: 0 } : { scale: 1, opacity: 1 }}
+            animate={isDrawing ? { 
               scale: [0, 1.1, 1],
               rotate: [180, 0, 0],
               opacity: [0, 1, 1]
-            }}
+            } : { scale: 1, opacity: 1 }}
             transition={{ 
               duration: 1.2,
               type: "spring",
@@ -57,19 +61,21 @@ export function ModernDrawingPreview({
             }}
           >
             {/* Glowing effect for current ball */}
-            <motion.div
-              className="absolute inset-0 rounded-full bg-white/20"
-              animate={{ 
-                scale: [1, 1.2, 1],
-                opacity: [0.3, 0.6, 0.3]
-              }}
-              transition={{ 
-                duration: 2, 
-                repeat: Infinity,
-                ease: "easeInOut" 
-              }}
-            />
-            {currentNumber}
+            {isDrawing && (
+              <motion.div
+                className="absolute inset-0 rounded-full bg-white/20"
+                animate={{ 
+                  scale: [1, 1.2, 1],
+                  opacity: [0.3, 0.6, 0.3]
+                }}
+                transition={{ 
+                  duration: 2, 
+                  repeat: Infinity,
+                  ease: "easeInOut" 
+                }}
+              />
+            )}
+            {centerNumber}
           </motion.div>
         ) : (
           <div className="w-32 h-32 mx-auto bg-gradient-to-br from-slate-700 to-slate-800 rounded-full flex items-center justify-center text-slate-400 text-xl font-bold border-4 border-slate-600">
@@ -81,7 +87,7 @@ export function ModernDrawingPreview({
       {/* Previously Drawn Numbers - Small balls in grid (matches image style) */}
       <div className="grid grid-cols-4 gap-3 justify-items-center">
         <AnimatePresence mode="popLayout">
-          {displayNumbers.map((number, index) => (
+          {displayNumbers.filter(num => num !== centerNumber).map((number, index) => (
             <motion.div
               key={`${number}-${index}`}
               className="w-12 h-12 bg-gradient-to-br from-green-600 to-green-700 rounded-full flex items-center justify-center text-white font-bold text-sm border-2 border-green-500 shadow-lg"
