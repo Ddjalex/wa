@@ -3,6 +3,7 @@ import { ModernKenoLayout } from "@/components/modern-keno-layout";
 import { ModernKenoGrid } from "@/components/modern-keno-grid";
 import { ModernBettingPanel } from "@/components/modern-betting-panel";
 import { ModernDrawDisplay } from "@/components/modern-draw-display";
+import { ModernDrawingPreview } from "@/components/modern-drawing-preview";
 import { useKenoGame } from "@/hooks/use-keno-game";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { SoundManager } from "@/lib/sound-manager";
@@ -120,47 +121,62 @@ export default function KenoGame() {
       onSoundToggle={handleSoundToggle}
       isSoundEnabled={isSoundEnabled}
     >
-      <div className="grid grid-cols-12 gap-8">
-        {/* Left Panel - Betting Controls */}
-        <div className="col-span-3">
-          <ModernBettingPanel
-            user={user || null}
-            selectedNumbers={selectedNumbers}
-            currentBet={currentBet}
-            onBetChange={setCurrentBet}
-            potentialWin={calculatePotentialWin()}
-            onPlaceBet={handlePlaceBet}
-            onClearSelections={handleClearSelections}
-            isPlacingBet={isPlacingBet}
-            canPlaceBet={selectedNumbers.size > 0 && !isDrawing}
-          />
+      <div className="space-y-8">
+        {/* Top Row - Drawing Preview */}
+        <div className="grid grid-cols-12 gap-8">
+          <div className="col-span-8 col-start-3">
+            <ModernDrawingPreview
+              drawnNumbers={gameState?.drawingSequence || []}
+              currentDrawIndex={gameState?.currentDrawIndex || 0}
+              isDrawing={isDrawing}
+              gameNumber={gameState?.currentGame?.gameNumber || 1}
+            />
+          </div>
         </div>
 
-        {/* Center Panel - Number Grid */}
-        <div className="col-span-6">
-          <ModernKenoGrid
-            selectedNumbers={selectedNumbers}
-            drawnNumbers={drawnNumbers}
-            winningNumbers={winningNumbers}
-            isDrawing={isDrawing}
-            onNumberSelect={handleNumberSelect}
-            drawingSequence={gameState?.drawingSequence || []}
-            currentDrawIndex={gameState?.currentDrawIndex || 0}
-          />
-        </div>
+        {/* Main Game Area */}
+        <div className="grid grid-cols-12 gap-8">
+          {/* Left Panel - Betting Controls */}
+          <div className="col-span-3">
+            <ModernBettingPanel
+              user={user || null}
+              selectedNumbers={selectedNumbers}
+              currentBet={currentBet}
+              onBetChange={setCurrentBet}
+              potentialWin={calculatePotentialWin()}
+              onPlaceBet={handlePlaceBet}
+              onClearSelections={handleClearSelections}
+              isPlacingBet={isPlacingBet}
+              canPlaceBet={selectedNumbers.size > 0 && !isDrawing}
+            />
+          </div>
 
-        {/* Right Panel - Draw Status & History */}
-        <div className="col-span-3">
-          <ModernDrawDisplay
-            gameNumber={gameState?.currentGame?.gameNumber || 1}
-            drawnNumbers={drawnNumbers}
-            isDrawing={isDrawing}
-            nextDrawTime={typeof nextDrawTime === 'number' ? new Date(nextDrawTime) : nextDrawTime}
-            timeUntilNext={timeUntilNext}
-            drawingSequence={gameState?.drawingSequence || []}
-            currentDrawIndex={gameState?.currentDrawIndex || 0}
-            gameHistory={Array.isArray(gameHistory) ? gameHistory : []}
-          />
+          {/* Center Panel - Number Grid */}
+          <div className="col-span-6">
+            <ModernKenoGrid
+              selectedNumbers={selectedNumbers}
+              drawnNumbers={drawnNumbers}
+              winningNumbers={winningNumbers}
+              isDrawing={isDrawing}
+              onNumberSelect={handleNumberSelect}
+              drawingSequence={gameState?.drawingSequence || []}
+              currentDrawIndex={gameState?.currentDrawIndex || 0}
+            />
+          </div>
+
+          {/* Right Panel - Draw Status & History */}
+          <div className="col-span-3">
+            <ModernDrawDisplay
+              gameNumber={gameState?.currentGame?.gameNumber || 1}
+              drawnNumbers={drawnNumbers}
+              isDrawing={isDrawing}
+              nextDrawTime={typeof nextDrawTime === 'number' ? new Date(nextDrawTime) : nextDrawTime}
+              timeUntilNext={timeUntilNext}
+              drawingSequence={gameState?.drawingSequence || []}
+              currentDrawIndex={gameState?.currentDrawIndex || 0}
+              gameHistory={Array.isArray(gameHistory) ? gameHistory : []}
+            />
+          </div>
         </div>
       </div>
     </ModernKenoLayout>
