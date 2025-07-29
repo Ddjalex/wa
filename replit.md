@@ -115,6 +115,9 @@ Changelog:
 - July 29, 2025. Created ModernKenoGrid with enhanced animations and visual feedback
 - July 29, 2025. Added ModernBettingPanel with improved Ethiopian Birr integration
 - July 29, 2025. Built ModernDrawDisplay with real-time game status and history
+- July 29, 2025. Enhanced drawing preview with sequential number animation (shows numbers one by one)
+- July 29, 2025. Added functional header buttons (Balance, Settings, Profile, Tickets) with click handlers
+- July 29, 2025. Created ModernTicketDisplay modal for viewing active bets and bet history
 ```
 
 ## User Preferences

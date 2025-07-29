@@ -14,7 +14,8 @@ import {
   VolumeX,
   RefreshCw,
   Play,
-  Pause
+  Pause,
+  Ticket
 } from "lucide-react";
 
 interface ModernKenoLayoutProps {
@@ -27,6 +28,10 @@ interface ModernKenoLayoutProps {
   totalWinnings: number;
   onSoundToggle: () => void;
   isSoundEnabled: boolean;
+  onBalanceClick?: () => void;
+  onSettingsClick?: () => void;
+  onProfileClick?: () => void;
+  onTicketsClick?: () => void;
 }
 
 export function ModernKenoLayout({
@@ -39,6 +44,10 @@ export function ModernKenoLayout({
   totalWinnings,
   onSoundToggle,
   isSoundEnabled,
+  onBalanceClick,
+  onSettingsClick,
+  onProfileClick,
+  onTicketsClick,
 }: ModernKenoLayoutProps) {
   const formatBalance = (cents: number) => {
     return `${(cents / 100).toFixed(2)} ETB`;
@@ -102,8 +111,11 @@ export function ModernKenoLayout({
 
             {/* Right - User Info & Controls */}
             <div className="flex items-center space-x-4">
-              {/* Balance Display */}
-              <Card className="bg-[var(--keno-bg-tertiary)] border-[var(--keno-border)]">
+              {/* Balance Display - Clickable */}
+              <Card 
+                className="bg-[var(--keno-bg-tertiary)] border-[var(--keno-border)] cursor-pointer hover:bg-[var(--keno-bg-secondary)] transition-colors"
+                onClick={onBalanceClick}
+              >
                 <CardContent className="px-4 py-2">
                   <div className="flex items-center space-x-3">
                     <Coins className="w-5 h-5 text-[var(--keno-accent-gold)]" />
@@ -152,6 +164,7 @@ export function ModernKenoLayout({
                 <Button
                   variant="ghost"
                   size="sm"
+                  onClick={onSettingsClick}
                   className="text-[var(--keno-text-secondary)] hover:text-[var(--keno-text-primary)] hover:bg-[var(--keno-bg-tertiary)]"
                 >
                   <Settings className="w-4 h-4" />
@@ -160,9 +173,20 @@ export function ModernKenoLayout({
                 <Button
                   variant="ghost"
                   size="sm"
+                  onClick={onProfileClick}
                   className="text-[var(--keno-text-secondary)] hover:text-[var(--keno-text-primary)] hover:bg-[var(--keno-bg-tertiary)]"
                 >
                   <User className="w-4 h-4" />
+                </Button>
+
+                {/* Tickets Button */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onTicketsClick}
+                  className="text-[var(--keno-text-secondary)] hover:text-[var(--keno-text-primary)] hover:bg-[var(--keno-bg-tertiary)]"
+                >
+                  <Ticket className="w-4 h-4" />
                 </Button>
               </div>
             </div>

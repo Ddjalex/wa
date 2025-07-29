@@ -19,8 +19,12 @@ export function ModernDrawingPreview({
   isDrawing,
   gameNumber
 }: ModernDrawingPreviewProps) {
-  const displayNumbers = drawnNumbers.slice(0, Math.max(0, currentDrawIndex));
-  const currentNumber = drawnNumbers[currentDrawIndex];
+  // Show numbers up to current index during drawing, all numbers when complete
+  const displayNumbers = isDrawing 
+    ? drawnNumbers.slice(0, Math.max(0, currentDrawIndex))
+    : drawnNumbers.slice(0, -1); // All except the last one (which shows in center)
+  
+  const currentNumber = isDrawing ? drawnNumbers[currentDrawIndex] : null;
   const lastDrawnNumber = drawnNumbers[drawnNumbers.length - 1];
   const centerNumber = isDrawing ? currentNumber : lastDrawnNumber;
 
@@ -33,7 +37,12 @@ export function ModernDrawingPreview({
           <p className="text-slate-400 text-sm">Game #{gameNumber}</p>
         </div>
         <div className="text-right text-slate-300">
-          <div className="text-sm">{displayNumbers.length + (currentNumber ? 1 : 0)} / 20</div>
+          <div className="text-sm">
+            {isDrawing 
+              ? `${Math.min(currentDrawIndex + 1, drawnNumbers.length)} / 20` 
+              : `${drawnNumbers.length} / 20`
+            }
+          </div>
         </div>
       </div>
 
@@ -85,16 +94,16 @@ export function ModernDrawingPreview({
       </div>
 
       {/* Previously Drawn Numbers - Small balls in grid (matches image style) */}
-      <div className="grid grid-cols-4 gap-3 justify-items-center">
+      <div className="grid grid-cols-4 gap-3 justify-items-center min-h-[120px]">
         <AnimatePresence mode="popLayout">
-          {displayNumbers.filter(num => num !== centerNumber).map((number, index) => (
+          {displayNumbers.map((number, index) => (
             <motion.div
-              key={`${number}-${index}`}
+              key={`drawn-${number}-${index}`}
               className="w-12 h-12 bg-gradient-to-br from-green-600 to-green-700 rounded-full flex items-center justify-center text-white font-bold text-sm border-2 border-green-500 shadow-lg"
               initial={{ 
                 scale: 0, 
                 opacity: 0, 
-                y: -20,
+                y: -30,
                 rotateY: -180 
               }}
               animate={{ 
@@ -106,13 +115,15 @@ export function ModernDrawingPreview({
               exit={{ 
                 scale: 0, 
                 opacity: 0,
-                transition: { duration: 0.2 }
+                y: 30,
+                transition: { duration: 0.3 }
               }}
               transition={{ 
-                duration: 0.8, 
-                delay: index * 0.05,
+                duration: 1, 
+                delay: isDrawing ? 0.5 : index * 0.1, // Delay when drawing to show sequence
                 type: "spring",
-                stiffness: 120
+                stiffness: 150,
+                damping: 12
               }}
               layout
             >
@@ -120,6 +131,14 @@ export function ModernDrawingPreview({
             </motion.div>
           ))}
         </AnimatePresence>
+
+        {/* Empty slots for remaining numbers */}
+        {displayNumbers.length === 0 && !isDrawing && (
+          <div className="col-span-4 flex items-center justify-center text-slate-500 py-8">
+            <Clock className="w-8 h-8 mr-2" />
+            <span>Waiting for first draw</span>
+          </div>
+        )}
       </div>
 
       {/* Status Text */}

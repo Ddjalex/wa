@@ -4,6 +4,7 @@ import { ModernKenoGrid } from "@/components/modern-keno-grid";
 import { ModernBettingPanel } from "@/components/modern-betting-panel";
 import { ModernDrawDisplay } from "@/components/modern-draw-display";
 import { ModernDrawingPreview } from "@/components/modern-drawing-preview";
+import { ModernTicketDisplay } from "@/components/modern-ticket-display";
 import { useKenoGame } from "@/hooks/use-keno-game";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { SoundManager } from "@/lib/sound-manager";
@@ -14,6 +15,8 @@ export default function KenoGame() {
   const [soundManager] = useState(() => SoundManager.getInstance());
   const [isSoundEnabled, setIsSoundEnabled] = useState(true);
   const [timeUntilNext, setTimeUntilNext] = useState(60);
+  const [showTickets, setShowTickets] = useState(false);
+  const [activeBets, setActiveBets] = useState<any[]>([]);
   
   const {
     gameState,
@@ -101,6 +104,22 @@ export default function KenoGame() {
     }
   };
 
+  const handleBalanceClick = () => {
+    console.log('Balance clicked - show deposit/withdrawal options');
+  };
+
+  const handleSettingsClick = () => {
+    console.log('Settings clicked - show game settings');
+  };
+
+  const handleProfileClick = () => {
+    console.log('Profile clicked - show user profile');
+  };
+
+  const handleTicketsClick = () => {
+    setShowTickets(true);
+  };
+
   const calculatePotentialWin = () => {
     const matches = selectedNumbers.size;
     const payoutTable: { [key: number]: number } = {
@@ -120,6 +139,10 @@ export default function KenoGame() {
       totalWinnings={0} // TODO: Calculate today's winnings
       onSoundToggle={handleSoundToggle}
       isSoundEnabled={isSoundEnabled}
+      onBalanceClick={handleBalanceClick}
+      onSettingsClick={handleSettingsClick}
+      onProfileClick={handleProfileClick}
+      onTicketsClick={handleTicketsClick}
     >
       <div className="space-y-8">
         {/* Top Row - Drawing Preview (matches dash.bet style) */}
@@ -179,6 +202,13 @@ export default function KenoGame() {
           </div>
         </div>
       </div>
+
+      {/* Ticket Display Modal */}
+      <ModernTicketDisplay
+        activeBets={activeBets}
+        isVisible={showTickets}
+        onClose={() => setShowTickets(false)}
+      />
     </ModernKenoLayout>
   );
 }
