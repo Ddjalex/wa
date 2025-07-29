@@ -3,33 +3,40 @@
 @tailwind utilities;
 
 :root {
-  --background: hsl(240, 10%, 3.9%);
+  --background: hsl(220, 26%, 8%);
   --foreground: hsl(0, 0%, 98%);
-  --muted: hsl(240, 3.7%, 15.9%);
-  --muted-foreground: hsl(240, 5%, 64.9%);
-  --popover: hsl(240, 10%, 3.9%);
+  --muted: hsl(220, 20%, 12%);
+  --muted-foreground: hsl(220, 15%, 65%);
+  --popover: hsl(220, 26%, 8%);
   --popover-foreground: hsl(0, 0%, 98%);
-  --card: hsl(240, 10%, 3.9%);
+  --card: hsl(220, 20%, 10%);
   --card-foreground: hsl(0, 0%, 98%);
-  --border: hsl(240, 3.7%, 15.9%);
-  --input: hsl(240, 3.7%, 15.9%);
-  --primary: hsl(207, 90%, 54%);
-  --primary-foreground: hsl(211, 100%, 99%);
-  --secondary: hsl(240, 3.7%, 15.9%);
+  --border: hsl(220, 15%, 18%);
+  --input: hsl(220, 15%, 15%);
+  --primary: hsl(45, 93%, 47%);
+  --primary-foreground: hsl(220, 26%, 8%);
+  --secondary: hsl(220, 15%, 18%);
   --secondary-foreground: hsl(0, 0%, 98%);
-  --accent: hsl(240, 3.7%, 15.9%);
-  --accent-foreground: hsl(0, 0%, 98%);
-  --destructive: hsl(0, 62.8%, 30.6%);
+  --accent: hsl(45, 93%, 47%);
+  --accent-foreground: hsl(220, 26%, 8%);
+  --destructive: hsl(0, 62.8%, 50%);
   --destructive-foreground: hsl(0, 0%, 98%);
-  --ring: hsl(240, 4.9%, 83.9%);
-  --radius: 0.5rem;
+  --ring: hsl(45, 93%, 47%);
+  --radius: 0.75rem;
   
-  /* Keno specific colors */
-  --game-navy: hsl(220, 26%, 14%);
-  --game-purple: hsl(239, 84%, 67%);
-  --game-green: hsl(158, 64%, 52%);
-  --game-gold: hsl(45, 93%, 47%);
-  --game-amber: hsl(43, 96%, 56%);
+  /* Modern Keno colors inspired by dash.bet */
+  --keno-bg-primary: hsl(220, 26%, 8%);
+  --keno-bg-secondary: hsl(220, 20%, 12%);
+  --keno-bg-tertiary: hsl(220, 15%, 15%);
+  --keno-accent-gold: hsl(45, 93%, 47%);
+  --keno-accent-green: hsl(120, 50%, 50%);
+  --keno-accent-blue: hsl(210, 80%, 55%);
+  --keno-accent-red: hsl(0, 70%, 55%);
+  --keno-text-primary: hsl(0, 0%, 98%);
+  --keno-text-secondary: hsl(220, 15%, 75%);
+  --keno-text-muted: hsl(220, 10%, 55%);
+  --keno-border: hsl(220, 15%, 25%);
+  --keno-glow: hsl(45, 93%, 47%);
 }
 
 .dark {
@@ -62,7 +69,7 @@
 
   body {
     @apply font-sans antialiased text-foreground min-h-screen;
-    background: linear-gradient(to bottom right, var(--game-navy), rgb(31, 41, 55));
+    background: linear-gradient(135deg, var(--keno-bg-primary) 0%, var(--keno-bg-secondary) 50%, var(--keno-bg-tertiary) 100%);
   }
 }
 

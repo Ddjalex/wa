@@ -1,23 +1,18 @@
 import { useState, useEffect } from "react";
-import { KenoGameBoard } from "@/components/keno-game-board";
-import { LotteryBallDisplay } from "@/components/lottery-ball-display";
-import { AnimatedDrawingPreview } from "@/components/animated-drawing-preview";
-import { EnhancedKenoBoard } from "@/components/enhanced-keno-board";
-import { BettingTicket } from "@/components/betting-ticket";
-import { DrawHistory } from "@/components/draw-history";
-import { PlayerTicket } from "@/components/player-ticket";
-import { SoundControls } from "@/components/sound-controls";
-import { Button } from "@/components/ui/button";
-import { Settings, Wallet } from "lucide-react";
+import { ModernKenoLayout } from "@/components/modern-keno-layout";
+import { ModernKenoGrid } from "@/components/modern-keno-grid";
+import { ModernBettingPanel } from "@/components/modern-betting-panel";
+import { ModernDrawDisplay } from "@/components/modern-draw-display";
 import { useKenoGame } from "@/hooks/use-keno-game";
 import { useWebSocket } from "@/hooks/use-websocket";
 import { SoundManager } from "@/lib/sound-manager";
-import { Link } from "wouter";
 
 export default function KenoGame() {
   const [selectedNumbers, setSelectedNumbers] = useState<Set<number>>(new Set());
-  const [currentBet, setCurrentBet] = useState(25);
+  const [currentBet, setCurrentBet] = useState(50);
   const [soundManager] = useState(() => SoundManager.getInstance());
+  const [isSoundEnabled, setIsSoundEnabled] = useState(true);
+  const [timeUntilNext, setTimeUntilNext] = useState(60);
   
   const {
     gameState,
@@ -33,6 +28,20 @@ export default function KenoGame() {
   } = useKenoGame();
 
   const { isConnected } = useWebSocket();
+
+  // Update timer
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (nextDrawTime) {
+        const now = new Date();
+        const nextTime = typeof nextDrawTime === 'number' ? new Date(nextDrawTime) : nextDrawTime;
+        const diff = Math.max(0, Math.floor((nextTime.getTime() - now.getTime()) / 1000));
+        setTimeUntilNext(diff);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [nextDrawTime]);
 
   const handleNumberSelect = (number: number) => {
     if (drawnNumbers.has(number) || isDrawing) return;
@@ -82,87 +91,78 @@ export default function KenoGame() {
     setSelectedNumbers(new Set());
   };
 
+  const handleSoundToggle = () => {
+    setIsSoundEnabled(!isSoundEnabled);
+    if (isSoundEnabled) {
+      soundManager.setVolume(0);
+    } else {
+      soundManager.setVolume(0.3);
+    }
+  };
+
   const calculatePotentialWin = () => {
     const matches = selectedNumbers.size;
     const payoutTable: { [key: number]: number } = {
-      3: 3, 4: 5, 5: 10, 6: 25, 7: 50, 8: 100, 9: 250, 10: 500,
+      1: 2, 2: 2, 3: 3, 4: 5, 5: 10, 6: 25, 7: 50, 8: 100, 9: 250, 10: 500,
     };
     const multiplier = payoutTable[matches] || 0;
     return currentBet * multiplier;
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-slate-800">
-      {/* Navigation Buttons */}
-      <div className="fixed top-4 right-4 z-40 flex gap-2">
-        <SoundControls />
-        <Link href="/wallet">
-          <Button
-            variant="outline"
-            size="sm"
-            className="bg-gray-800/80 border-gray-600 text-white hover:bg-gray-700 hover:text-white backdrop-blur-sm"
-          >
-            <Wallet className="w-4 h-4 mr-2" />
-            Wallet
-          </Button>
-        </Link>
-      </div>
+    <ModernKenoLayout
+      gameNumber={gameState?.currentGame?.gameNumber || 1}
+      nextDrawTime={typeof nextDrawTime === 'number' ? new Date(nextDrawTime) : nextDrawTime}
+      isDrawing={isDrawing}
+      timeUntilNext={timeUntilNext}
+      userBalance={user?.balance || 0}
+      totalWinnings={0} // TODO: Calculate today's winnings
+      onSoundToggle={handleSoundToggle}
+      isSoundEnabled={isSoundEnabled}
+    >
+      <div className="grid grid-cols-12 gap-8">
+        {/* Left Panel - Betting Controls */}
+        <div className="col-span-3">
+          <ModernBettingPanel
+            user={user || null}
+            selectedNumbers={selectedNumbers}
+            currentBet={currentBet}
+            onBetChange={setCurrentBet}
+            potentialWin={calculatePotentialWin()}
+            onPlaceBet={handlePlaceBet}
+            onClearSelections={handleClearSelections}
+            isPlacingBet={isPlacingBet}
+            canPlaceBet={selectedNumbers.size > 0 && !isDrawing}
+          />
+        </div>
 
-      <div className="container mx-auto px-4 py-6">
-        <div className="grid grid-cols-12 gap-6 h-screen">
-          {/* Left Side - Betting Ticket */}
-          <div className="col-span-3">
-            <BettingTicket
-              user={user || null}
-              selectedNumbers={selectedNumbers}
-              currentBet={currentBet}
-              onBetChange={setCurrentBet}
-              potentialWin={calculatePotentialWin()}
-              onPlaceBet={handlePlaceBet}
-              onClearSelections={handleClearSelections}
-              isPlacingBet={isPlacingBet}
-              canPlaceBet={selectedNumbers.size > 0 && !isDrawing}
-              drawnNumbers={drawnNumbers}
-            />
-          </div>
+        {/* Center Panel - Number Grid */}
+        <div className="col-span-6">
+          <ModernKenoGrid
+            selectedNumbers={selectedNumbers}
+            drawnNumbers={drawnNumbers}
+            winningNumbers={winningNumbers}
+            isDrawing={isDrawing}
+            onNumberSelect={handleNumberSelect}
+            drawingSequence={gameState?.drawingSequence || []}
+            currentDrawIndex={gameState?.currentDrawIndex || 0}
+          />
+        </div>
 
-          {/* Center - Main Game Area */}
-          <div className="col-span-6 flex flex-col space-y-6">
-            {/* Top Center - Animated Drawing Preview */}
-            <div className="flex justify-center">
-              <AnimatedDrawingPreview
-                drawnNumbers={gameState?.drawingSequence || []}
-                currentDrawIndex={gameState?.currentDrawIndex || 0}
-                isDrawing={isDrawing}
-                gameNumber={gameState?.currentGame?.gameNumber || 1}
-              />
-            </div>
-
-            {/* Center - 10x8 Number Grid */}
-            <div className="flex-1">
-              <EnhancedKenoBoard
-                selectedNumbers={selectedNumbers}
-                drawnNumbers={drawnNumbers}
-                winningNumbers={winningNumbers}
-                isDrawing={isDrawing}
-                gameNumber={gameState?.currentGame?.gameNumber || 1}
-                onNumberSelect={handleNumberSelect}
-                drawingSequence={gameState?.drawingSequence || []}
-                currentDrawIndex={gameState?.currentDrawIndex || 0}
-              />
-            </div>
-          </div>
-
-          {/* Right Side - Player Tickets & Draw History */}
-          <div className="col-span-3 space-y-4">
-            <PlayerTicket userId={1} />
-            <DrawHistory
-              gameHistory={gameHistory || []}
-              userSelectedNumbers={selectedNumbers}
-            />
-          </div>
+        {/* Right Panel - Draw Status & History */}
+        <div className="col-span-3">
+          <ModernDrawDisplay
+            gameNumber={gameState?.currentGame?.gameNumber || 1}
+            drawnNumbers={drawnNumbers}
+            isDrawing={isDrawing}
+            nextDrawTime={typeof nextDrawTime === 'number' ? new Date(nextDrawTime) : nextDrawTime}
+            timeUntilNext={timeUntilNext}
+            drawingSequence={gameState?.drawingSequence || []}
+            currentDrawIndex={gameState?.currentDrawIndex || 0}
+            gameHistory={Array.isArray(gameHistory) ? gameHistory : []}
+          />
         </div>
       </div>
-    </div>
+    </ModernKenoLayout>
   );
 }
